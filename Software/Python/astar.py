@@ -1,8 +1,12 @@
-from urllib.request import urlopen
+from urllib2 import urlopen
+# import pyttsx
 import json 
 import heapq
 
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
+# engine = pyttsx.init()
+# engine.say('text to speech initialised.')
+# engine.runAndWait()
 
 class NODE:
     '''Used instead of map data for ease of use'''
@@ -94,24 +98,24 @@ def newline():
     print('')
 
 ##Choose map to download
-# buildingNameList = ['DemoBuilding', 'COM1', 'COM2']
-# floorNumberList = {'DemoBuilding':[1, 2, 3], 'COM1':[1, 2], 'COM2':[2, 3]}
-# number = -1
-# floorNumber= -1
+buildingNameList = ['DemoBuilding', 'COM1', 'COM2']
+floorNumberList = {'DemoBuilding':[1, 2, 3], 'COM1':[1, 2], 'COM2':[2, 3]}
+number = -1
+floorNumber= -1
 
-# while (number - 1) not in range(len(buildingNameList)):
-#     print('Building?\n1: DemoBuilding\n2: COM1\n3: COM2')
-#     number = int(input())
-# buildingName = buildingNameList[number-1]
+while (number - 1) not in range(len(buildingNameList)):
+    print('Building?\n1: DemoBuilding\n2: COM1\n3: COM2')
+    number = int(input())
+buildingName = buildingNameList[number-1]
 
-# while floorNumber not in floorNumberList[buildingName]:
-#     newline()
-#     print('Floor number?')
-#     print(floorNumberList[buildingName])
-#     floorNumber = int(input())
+while floorNumber not in floorNumberList[buildingName]:
+    newline()
+    print('Floor number?')
+    print(floorNumberList[buildingName])
+    floorNumber = int(input())
 
-buildingName = input('Building name:')
-floorNumber = input('Floor number:')
+# buildingName = input('Building name:')
+# floorNumber = input('Floor number:')
 
 jsonmap = get_json(buildingName, floorNumber)
 info = jsonmap['info']
@@ -119,7 +123,7 @@ wifi = jsonmap['wifi']
 nodeList = get_nodes()
 
 newline()
-print(buildingName, 'Floor', floorNumber, 'has node IDs from 1 to', len(nodeList))
+print buildingName + ' Floor ' + str(floorNumber) + ' has node IDs from 1 to ' + str(len(nodeList))
 startNode = nodeList[int(input('Start node ID: '))-1]
 goalNode = nodeList[int(input('Goal node ID: '))-1]
 newline()
@@ -156,5 +160,5 @@ while openList:
     closedList.append(currentNode)
 
 route = get_route()
-print('Order of visited nodes: ', orderList)
-print('Route is: ', route)
+print 'Order of visited nodes: ' + (str(orderList))
+print 'Route is: ' + str(route)
