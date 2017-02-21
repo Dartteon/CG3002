@@ -29,33 +29,7 @@ def main():
     startNode = nodeList[int(input('Start node ID: '))-1]
     goalNode = nodeList[int(input('Goal node ID: '))-1]
     newline()
-
-<<<<<<< HEAD
-=======
-def main():
-    # Integer input mode for fixed list of maps
-    buildingName = int_to_buildingName()
-    floorNumber = int_to_floodNumber(buildingName)
-
-    # Text input mode for new maps
-    # buildingName = input('Building name: ')
-    # floorNumber = input('Floor number: ')
-
-    jsonmap = get_json(buildingName, floorNumber)
-    info = jsonmap['info']
-    wifi = jsonmap['wifi']
-    northAt = int(info['northAt'])
-    nodeList = get_nodes(jsonmap)
-
-    newline()
-    print('Name of the first node at', buildingName, 'Floor', floorNumber, 'is', nodeList[0].nodeName)
-    print(buildingName, 'Floor', floorNumber, 'has node IDs from 1 to', len(nodeList))
-    print('North is at', info['northAt'], 'degrees')
-    startNode = nodeList[int(input('Start node ID: '))-1]
-    goalNode = nodeList[int(input('Goal node ID: '))-1]
-    newline()
-
->>>>>>> 9eb7d65bfaf9fe04c525dde7c9c046f555ad2cb5
+    
     hList = heuristic(goalNode, nodeList)
 
     for index in range(len(hList)):
@@ -88,13 +62,8 @@ def main():
         closedList.append(currentNode)
 
     route = get_route(goalNode, nodeList)
-<<<<<<< HEAD
     print 'Order of visited nodes: ' + str(orderList)
     print 'Route is: ' + str(route)
-=======
-    print('Order of visited nodes: ', orderList)
-    print('Route is: ', route)
->>>>>>> 9eb7d65bfaf9fe04c525dde7c9c046f555ad2cb5
 
     path_to_goal(nodeList, route, northAt)
     
