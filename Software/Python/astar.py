@@ -10,6 +10,66 @@ import math
 
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
 
+def main():
+    # Integer input mode for fixed list of maps
+    buildingName = int_to_buildingName()
+    floorNumber = int_to_floodNumber(buildingName)
+
+    # Text input mode for new maps
+    # buildingName = input('Building name: ')
+    # floorNumber = input('Floor number: ')
+
+    jsonmap = get_json(buildingName, floorNumber)
+    info = jsonmap['info']
+    wifi = jsonmap['wifi']
+    northAt = int(info['northAt'])
+    nodeList = get_nodes(jsonmap)
+
+    newline()
+    print('Name of the first node at', buildingName, 'Floor', floorNumber, 'is', nodeList[0].nodeName)
+    print(buildingName, 'Floor', floorNumber, 'has node IDs from 1 to', len(nodeList))
+    print('North is at', info['northAt'], 'degrees')
+    startNode = nodeList[int(input('Start node ID: '))-1]
+    goalNode = nodeList[int(input('Goal node ID: '))-1]
+    newline()
+
+    hList = heuristic(goalNode, nodeList)
+
+    for index in range(len(hList)):
+        nodeList[index].h = hList[index]
+
+    openList = []
+    closedList = []
+    orderList = []
+
+    heapq.heappush(openList, startNode)
+
+    while openList:
+        currentNode = heapq.heappop(openList)
+        orderList.append(currentNode.nodeId)
+        if currentNode == goalNode:
+            openList = []
+        else:
+            adjacentNodeId = [int(x) for x in currentNode.linkTo.split(',')]
+            for nodeId in adjacentNodeId:
+                gTemp = currentNode.g + distance_between(nodeList[nodeId-1], currentNode)
+                if nodeList[nodeId-1] in openList and nodeList[nodeId-1].g <= gTemp:
+                    pass
+                elif nodeList[nodeId-1] in closedList and nodeList[nodeId-1].g <= gTemp:
+                    pass
+                else:
+                    nodeList[nodeId-1].parent = currentNode.nodeId
+                    nodeList[nodeId-1].g = gTemp
+                    heapq.heappush(openList, nodeList[nodeId-1])
+            
+        closedList.append(currentNode)
+
+    route = get_route(goalNode, nodeList)
+    print('Order of visited nodes: ', orderList)
+    print('Route is: ', route)
+
+    path_to_goal(nodeList, route, northAt)
+    
 class NODE:
     '''Used instead of map data for ease of use'''
     def __init__(self, nodeId, x, y, nodeName, linkTo):
@@ -66,7 +126,7 @@ def get_json(buildingName, floorNumber):
     data = json.loads(response.read())
     return data
 
-def heuristic(goalNode):
+def heuristic(goalNode, nodeList):
     '''Returns Euclidean Distance between all nodes and goal node'''
     h=[]
     for node in nodeList:
@@ -75,7 +135,7 @@ def heuristic(goalNode):
         h.append((dx**2 + dy**2)**0.5)
     return h
 
-def get_nodes():
+def get_nodes(jsonmap):
     nodeList=[]
     for node in jsonmap['map']:
         nodeList.append(NODE(node['nodeId'],node['x'],node['y'],node['nodeName'],node['linkTo']))
@@ -87,7 +147,7 @@ def distance_between(node1, node2):
     distance = ((dx**2 + dy**2)**0.5)
     return distance
 
-def get_route():
+def get_route(goalNode, nodeList):
     currentNode = goalNode
     route = [goalNode.nodeId]
     while currentNode.parent is not None:
@@ -96,109 +156,66 @@ def get_route():
     route.reverse()
     return route
 
-def displacement_from_position(position, node):
+def displacement_from_position(position, node, northAt):
     dx = node.x - position['x']
     dy = node.y - position['y']
     distance = ((dx**2 + dy**2)**0.5)
     if distance == 0.0:
         turnAngle = 0
     else:
-        bearing = ((90 + -1 * math.degrees(math.atan(dx/dy))) - int(info['northAt'])) % 360
+        bearing = ((90 - math.degrees(math.atan2(dy, dx))) - northAt) % 360
         turnAngle = bearing - position['heading']
     if turnAngle > 180:
         turnAngle -= 360
     displacement = {'distance':int(distance), 'turnAngle':int(turnAngle)}
     return displacement
 
-def path_to_goal():
+def path_to_goal(nodeList, route, northAt):
     index = 0
     previousNode = nodeList[route[index]-1]
     position = {'x':nodeList[route[index]-1].x, 'y':nodeList[route[index]-1].y, 'heading':0}
     while previousNode is not nodeList[route[len(route)-1]-1]:
         index += 1
         nextNode = nodeList[route[index]-1]
-        displacement = displacement_from_position(position, nextNode)
+        displacement = displacement_from_position(position, nextNode, northAt)
         while displacement['distance'] > 10:
-            print('Next node (node ID ', nextNode.nodeId, ') is ', displacement['distance'], ' cm away at a bearing of ', displacement['turnAngle'], ' degrees', sep='')
+            print('To reach the next node (node ID ', nextNode.nodeId, ') turn ', displacement['turnAngle'], ' degrees and walk ', displacement['distance'], ' cm', sep='')
             position['x'] = int(input('Current x: '))
             position['y'] = int(input('Current y: '))
             position['heading'] = int(input('Current heading: '))
-            displacement = displacement_from_position(position, nextNode)
+            displacement = displacement_from_position(position, nextNode, northAt)
         previousNode = nextNode
-
-
-
-
 
 def newline():
     print('')
 
-##Choose map to download
-buildingNameList = ['DemoBuilding', 'COM1', 'COM2']
-floorNumberList = {'DemoBuilding':[1, 2, 3], 'COM1':[1, 2], 'COM2':[2, 3]}
-number = -1
-floorNumber= -1
+def int_to_buildingName():
+    buildingNameList = ['DemoBuilding', 'COM1', 'COM2']
+    number = 0        
+    while (number - 1) not in range(len(buildingNameList)):
+        try:
+            print('Building?\n1: DemoBuilding\n2: COM1\n3: COM2')
+            number = int(input())
+            if number - 1 not in range(len(buildingNameList)):
+                print('Please enter an integer building index number from the given list.')
+        except ValueError:
+            print('That was not an integer.\nPlease enter an integer building index number from the given list.')
+        newline()
+    return buildingNameList[number-1]
 
-while (number - 1) not in range(len(buildingNameList)):
-    print('Building?\n1: DemoBuilding\n2: COM1\n3: COM2')
-    number = int(input())
-buildingName = buildingNameList[number-1]
+def int_to_floodNumber(buildingName):
+    floorNumberList = {'DemoBuilding':[1, 2, 3], 'COM1':[1, 2], 'COM2':[2, 3]}
+    floorNumber= 0    
+    while floorNumber not in floorNumberList[buildingName]:
+        try:
+            print('Floor number?')
+            print(floorNumberList[buildingName])
+            floorNumber = int(input())
+            if floorNumber not in floorNumberList[buildingName]:
+                print('Please enter an integer floor number from the given list.')
+        except ValueError:
+            print('That was not an integer.\nPlease enter an integer floor number from the given list.')
+        newline()
+    return floorNumber
 
-while floorNumber not in floorNumberList[buildingName]:
-    newline()
-    print('Floor number?')
-    print(floorNumberList[buildingName])
-    floorNumber = int(input())
-
-# buildingName = input('Building name:')
-# floorNumber = input('Floor number:')
-
-jsonmap = get_json(buildingName, floorNumber)
-info = jsonmap['info']
-wifi = jsonmap['wifi']
-nodeList = get_nodes()
-
-newline()
-print('Name of the first node at', buildingName, 'Floor', floorNumber, 'is', nodeList[0].nodeName)
-print(buildingName, 'Floor', floorNumber, 'has node IDs from 1 to', len(nodeList))
-print('North is at', info['northAt'], 'degrees')
-startNode = nodeList[int(input('Start node ID: '))-1]
-goalNode = nodeList[int(input('Goal node ID: '))-1]
-newline()
-
-hList = heuristic(goalNode)
-
-for index in range(len(hList)):
-    nodeList[index].h = hList[index]
-
-openList = []
-closedList = []
-orderList = []
-
-heapq.heappush(openList, startNode)
-
-while openList:
-    currentNode = heapq.heappop(openList)
-    orderList.append(currentNode.nodeId)
-    if currentNode == goalNode:
-        openList = []
-    else:
-        adjacentNodeId = [int(x) for x in currentNode.linkTo.split(',')]
-        for nodeId in adjacentNodeId:
-            gTemp = currentNode.g + distance_between(nodeList[nodeId-1], currentNode)
-            if nodeList[nodeId-1] in openList and nodeList[nodeId-1].g <= gTemp:
-                pass
-            elif nodeList[nodeId-1] in closedList and nodeList[nodeId-1].g <= gTemp:
-                pass
-            else:
-                nodeList[nodeId-1].parent = currentNode.nodeId
-                nodeList[nodeId-1].g = gTemp
-                heapq.heappush(openList, nodeList[nodeId-1])
-        
-    closedList.append(currentNode)
-
-route = get_route()
-print('Order of visited nodes: ', orderList)
-print('Route is: ', route)
-
-path_to_goal()
+main()
