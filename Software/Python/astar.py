@@ -10,7 +10,7 @@ engine = pyttsx.init()
 def main():
     # Integer input mode for fixed list of maps
     buildingName = int_to_buildingName()
-    floorNumber = int_to_floodNumber(buildingName)
+    floorNumber = int_to_floorNumber(buildingName)
 
     # Text input mode for new maps
     # buildingName = input('Building name: ')
@@ -22,14 +22,14 @@ def main():
     northAt = int(info['northAt'])
     nodeList = get_nodes(jsonmap)
 
-    newline()
+    # newline()
     print 'Name of the first node at ' + buildingName + ' Floor ' + str(floorNumber) + ' is ' + nodeList[0].nodeName
     print buildingName + ' Floor ' + str(floorNumber) + ' has node IDs from 1 to ' + str(len(nodeList))
     print 'North is at ' + info['northAt'] + ' degrees'
     startNode = nodeList[int(input('Start node ID: '))-1]
     goalNode = nodeList[int(input('Goal node ID: '))-1]
     newline()
-    
+
     hList = heuristic(goalNode, nodeList)
 
     for index in range(len(hList)):
@@ -170,8 +170,9 @@ def displacement_from_position(position, node, northAt):
 def path_to_goal(nodeList, route, northAt):
     index = 0
     previousNode = nodeList[route[index]-1]
+    goalNode = nodeList[route[len(route)-1]-1]
     position = {'x':nodeList[route[index]-1].x, 'y':nodeList[route[index]-1].y, 'heading':0}
-    while previousNode is not nodeList[route[len(route)-1]-1]:
+    while previousNode is not goalNode:
         index += 1
         nextNode = nodeList[route[index]-1]
         displacement = displacement_from_position(position, nextNode, northAt)
@@ -182,14 +183,9 @@ def path_to_goal(nodeList, route, northAt):
             position['heading'] = int(input('Current heading: '))
             displacement = displacement_from_position(position, nextNode, northAt)
         print 'You have reached node ID ' + str(nextNode.nodeId)
-        engine.say('You have reached the next ID')
-        engine.runAndWait()
+        text_to_speech('You have reached the next node')
         previousNode = nextNode
-    engine.say('You have reached the final node')
-    engine.runAndWait()
-
-def newline():
-    print('')
+    text_to_speech('You have reached the final node')
 
 def int_to_buildingName():
     buildingNameList = ['DemoBuilding', 'COM1', 'COM2']
@@ -205,7 +201,7 @@ def int_to_buildingName():
         newline()
     return buildingNameList[number-1]
 
-def int_to_floodNumber(buildingName):
+def int_to_floorNumber(buildingName):
     floorNumberList = {'DemoBuilding':[1, 2, 3], 'COM1':[1, 2], 'COM2':[2, 3]}
     floorNumber= 0    
     while floorNumber not in floorNumberList[buildingName]:
@@ -219,5 +215,12 @@ def int_to_floodNumber(buildingName):
             print 'That was not an integer.\nPlease enter an integer floor number from the given list.'
         newline()
     return floorNumber
+
+def text_to_speech(text):
+    engine.say(text)
+    engine.runAndWait()
+
+def newline():
+    print('')
 
 main()
