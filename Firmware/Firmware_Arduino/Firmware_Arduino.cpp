@@ -32,7 +32,6 @@ SemaphoreHandle_t xSemaphore = NULL;
 QueueHandle_t xQueue = NULL;
 
 /*
-
  void vprint(void *p){
  xSemaphoreTake(xSemaphorePrint, portMAX_DELAY);
  Serial.println(*((String*) p));
@@ -58,7 +57,7 @@ static void initialize() {
 					//Serial.println("2");
 				} else{
 					Serial.print("error 3: ");
-					Serial.println("msg");
+					Serial.println(msg);
 				}
 			}
 		}
@@ -94,22 +93,43 @@ void transmit(void *p) {
 	int i = 0;
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-
+		int pos_backup = pos_json;
 		Serial.println("sendData");
 
 		StaticJsonBuffer<256> jsonBuffer;
 		JsonObject& json = jsonBuffer.createObject();
 		JsonArray& id = json.createNestedArray("id");
 		JsonArray& data = json.createNestedArray("data");
+		int checksum = 0;
 
 		for (i = 0; (pos_json != pos_packet) && (i < 10); i++) {
 			id.add(newPacket.id[pos_json]);
 			data.add(newPacket.data[pos_json]);
+			checksum = (checksum + newPacket.data[pos_json]) %256;
 			pos_json = (pos_json + 1) % MAX_STACK_SIZE;
+
 		}
-		json["checksum"] = newPacket.checksum++;
+
+		json["checksum"] = checksum;
+		//might fuck up
+		while(!Serial1){
+
+		}
+
 		json.printTo(Serial1);
-		//Serial1.println("");
+		//might fuck up
+		while (!(Serial1 && Serial1.available())){
+
+		}
+
+		if (Serial1.available()){
+			char msg = Serial1.read();
+			Serial.println(msg);
+		}
+		else {
+			Serial.println("error");
+			pos_json = pos_backup;
+		}
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(100);
 	}
@@ -119,6 +139,7 @@ void transmit(void *p) {
 void setup() {
 	xSemaphore = xSemaphoreCreateBinary();
 	xSemaphoreGive(xSemaphore);
+
 
 	Serial.begin(9600);
 	Serial1.begin(9600);
@@ -141,7 +162,6 @@ void loop() {
 
 /*
  void produce2(void *p) {
-
  int counter = 1;
  for (;;) {
  counter += 2;
@@ -157,30 +177,21 @@ void loop() {
 
 /*
  void transmit(void *p) {
-
  int counter = 1;
  Packet packetSend;
  for (;;) {
-
-
  if (xQueueReceive(xQueue, &packetSend,
  (TickType_t) portMAX_DELAY) == pdTRUE) {
-
  xSemaphoreTake(xSemaphore, portMAX_DELAY);
-
  Serial.println("begin sendData");
-
  Serial.println("Packet number: " + counter);
  for (int i = 0; i < MAX_STACK_SIZE; i++) {
  Serial.println(packetSend.id[i]);
  Serial.println(packetSend.data[i]);
  }
  Serial.println(packetSend.checksum);
-
  xSemaphoreGive(xSemaphore);
  }
-
  }
  }
  */
-
