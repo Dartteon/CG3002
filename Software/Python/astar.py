@@ -4,7 +4,9 @@ import json
 import heapq
 import math
 
+# Base URL for map info download
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
+# Initialising Text-to-Speech
 engine = pyttsx.init()
 
 def main():
@@ -177,13 +179,19 @@ def path_to_goal(nodeList, route, northAt):
         nextNode = nodeList[route[index]-1]
         displacement = displacement_from_position(position, nextNode, northAt)
         while displacement['distance'] > 20:
-            print 'To reach the next node (node ID ' + str(nextNode.nodeId) + ') turn ' + str(displacement['turnAngle']) + ' degrees and walk ' + str(displacement['distance']) + ' cm'
+            if displacement['turnAngle'] < 0:
+                print 'To reach the next node (node ID ' + str(nextNode.nodeId) + ') turn left ' + str(-displacement['turnAngle']) + ' degrees and walk ' + str(displacement['distance']) + ' cm'
+            elif displacement['turnAngle'] > 0:
+                print 'To reach the next node (node ID ' + str(nextNode.nodeId) + ') turn right ' + str(displacement['turnAngle']) + ' degrees and walk ' + str(displacement['distance']) + ' cm'
+            else:
+                print 'To reach the next node (node ID ' + str(nextNode.nodeId) + ') walk straight ahead ' + str(displacement['distance']) + ' cm'
             position['x'] = int(input('Current x: '))
             position['y'] = int(input('Current y: '))
             position['heading'] = int(input('Current heading: '))
             displacement = displacement_from_position(position, nextNode, northAt)
-        print 'You have reached node ID ' + str(nextNode.nodeId)
-        text_to_speech('You have reached the next node')
+        reached_message = 'You have reached node ID ' + str(nextNode.nodeId)
+        print reached_message
+        text_to_speech(reached_message)
         previousNode = nextNode
     text_to_speech('You have reached the final node')
 
