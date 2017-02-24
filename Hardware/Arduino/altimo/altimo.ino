@@ -38,7 +38,7 @@ void setup() {
   compass.enableDefault();
   calibrate();
   flag = 0;
-  threshhold = 85.0;
+  threshhold = 65.0;
   steps = 0;
   lowPassCount = 0;
   lowPassThreshhold = 10;
