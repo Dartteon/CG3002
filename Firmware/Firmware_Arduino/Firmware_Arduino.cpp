@@ -9,20 +9,16 @@
 
 #define PIN_PTTM 0
 #define STACK_SIZE 1024
-#define MAX_STACK_SIZE 20
+#define MAX_STORAGE_SIZE 100
+#define MAX_SENDING_PACKET_SIZE 10
 
-typedef struct packetStrt {
+typedef struct storageStrt {
 	//int type;
-	int id[MAX_STACK_SIZE];
-	int data[MAX_STACK_SIZE];
-	int checksum = 0;
-} Packet;
+	int id[MAX_STORAGE_SIZE];
+	int data[MAX_STORAGE_SIZE];
+} Storage;
 
-Packet newPacket;
-StaticJsonBuffer<200> jsonBuffer;
-JsonObject& json = jsonBuffer.createObject();
-JsonArray& id = json.createNestedArray("id");
-JsonArray& data = json.createNestedArray("data");
+Storage mainStorage;
 
 int pos_packet = 0;
 int pos_json = 0;
@@ -70,18 +66,15 @@ void addData(void *p) {
 	int data1 = 1;
 
 	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
 		//Serial.println("addData");
 
-		newPacket.id[pos_packet] = id1++;
-		newPacket.data[pos_packet] = data1++;
-		newPacket.checksum++;
+		mainStorage.id[pos_packet] = id1++;
+		mainStorage.data[pos_packet] = data1++;
 
 		//Serial.println(newPacket.id[counter]);
 
-		pos_packet = (pos_packet + 1) % MAX_STACK_SIZE;
-		xSemaphoreGive(xSemaphore);
+		pos_packet = (pos_packet + 1) % MAX_STORAGE_SIZE;
 
 		vTaskDelay(20);
 	}
@@ -89,7 +82,6 @@ void addData(void *p) {
 }
 
 void transmit(void *p) {
-//	Packet packet;
 	int i = 0;
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
@@ -102,11 +94,11 @@ void transmit(void *p) {
 		JsonArray& data = json.createNestedArray("data");
 		int checksum = 0;
 
-		for (i = 0; (pos_json != pos_packet) && (i < 10); i++) {
-			id.add(newPacket.id[pos_json]);
-			data.add(newPacket.data[pos_json]);
-			checksum = (checksum + newPacket.data[pos_json]) %256;
-			pos_json = (pos_json + 1) % MAX_STACK_SIZE;
+		for (i = 0; (pos_json != pos_packet) && (i < MAX_SENDING_PACKET_SIZE); i++) {
+			id.add(mainStorage.id[pos_json]);
+			data.add(mainStorage.data[pos_json]);
+			checksum = (checksum + mainStorage.data[pos_json]) %256;
+			pos_json = (pos_json + 1) % MAX_STORAGE_SIZE;
 
 		}
 
