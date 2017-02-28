@@ -20,6 +20,7 @@ L3G gyro;
 long duration, distance, RightSensor, BackSensor, FrontSensor, LeftSensor;
 int DIST_THRESHOLD_SIDES = 50;
 int DIST_THRESHOLD_MID = 50;
+int DURATION_TIMEOUT_SENSOR = 3000;
 //  ==============================================================================
 
 //  ===============================  Step Counter  ===============================
@@ -29,10 +30,11 @@ int xSamples[50] = { 0 };
 int xDynamicThreshold = 0;
 int xGyroOffset, yGyroOffset, zGyroOffset;
 int currSampleCount = 0;
+int xMin = 0, xMax =-0;
 
 int numStepsTaken = 0;
-int MINIMUM_ACCELERATION_Z = 800;
-int MINIMUM_STEP_INTERVAL = 600;
+int MINIMUM_ACCELERATION_Z = 400;
+int MINIMUM_STEP_INTERVAL = 30;
 int MINIMUM_ACCELERATION_DELTA = 800; //Crossing below threshold not enough - it must be a decent acceleration change
 unsigned long lastStepTime;
 //  ==============================================================================
@@ -56,7 +58,12 @@ void setup()
 
   //  Compass
   Wire.begin();
+  delayMicroseconds(10);
   compass.init();
+  delayMicroseconds(10);
+  gyro.init();
+  delayMicroseconds(10);
+  
   if (!compass.init())
   {
     Serial.println("Failed to initialize compass!");
@@ -64,6 +71,7 @@ void setup()
   } else {
     Serial.println("Compass Initialized!");
   }
+
   if (!gyro.init())
   {
     Serial.println("Failed to autodetect gyro type!");
@@ -87,13 +95,13 @@ void loop() {
   if (!proceed) return;
   switch (phase) {
     case 0: 
-//      readSensor(0);
+      readSensor(0);
       break;
     case 2: 
-//      readSensor(1);
+      readSensor(1);
       break;
     case 4: 
-//      readSensor(2);
+      readSensor(2);
       break;
     case 6: 
       readCompass();
@@ -102,7 +110,7 @@ void loop() {
       readStepCounter();
       break;
   }
-  phase = (phase + 1) % 20;
+  phase = (phase + 1) % 50;
 }
 
 void readSensor(int i) {
@@ -148,7 +156,9 @@ void SonarSensor(int trigPin, int echoPin)
   digitalWrite(trigPin, HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin, LOW);
-  duration = pulseIn(echoPin, HIGH);
+  duration = pulseIn(echoPin, HIGH, DURATION_TIMEOUT_SENSOR);
+  if (duration == 0)
+    duration = DURATION_TIMEOUT_SENSOR;
   distance = (duration / 2) / 29.1;
   proceed = true;
 }
@@ -169,15 +179,19 @@ void readStepCounter() {
   if (timeDiff < MINIMUM_STEP_INTERVAL) return;
   if (currGyroZ < MINIMUM_ACCELERATION_Z) return;
   xSamples[currSampleCount] = currGyroX;
+  if (currGyroX > xMax) xMax = currGyroX;
+  if (currGyroX < xMin) xMin = currGyroX;
   if (timeDiff >= 1000) {
     if (currGyroX < xDynamicThreshold) {
       //      incrementSteps(); 
       lastStepTime = currTime;
       numStepsTaken++;
-      Serial.print("Step taken! Total steps - " + (String)numStepsTaken + " ---- CurrGyroZ = ");
-      Serial.println(currGyroZ);
-      Serial.println("TimeDiff = " + (String)timeDiff);
+      Serial.println("Step taken! Total steps - " + (String)numStepsTaken + " ---- CurrGyroZ = ");
+//      Serial.println(currGyroZ);
+//      Serial.println("TimeDiff = " + (String)timeDiff);
     }
+  } else {
+      Serial.println("Step detected but not within interval threshold");
   }
 
   incrementSampleCount();
@@ -197,6 +211,12 @@ void readAltimu() {
   currGyroX = (int) compass.a.x - xGyroOffset;
   currGyroY = (int) compass.a.y - yGyroOffset;
   currGyroZ = (int) compass.a.z - zGyroOffset;
+
+  xFilter[3] = xFilter[2];
+  xFilter[2] = xFilter[1];
+  xFilter[1] = xFilter[0];
+  xFilter[0] = currGyroX;
+  currGyroX = (xFilter[0] + xFilter[1] + xFilter[2] + xFilter[3])/4.0;
 
 //    Serial.println("Gyro " + (String)currGyroX + " " + (String)currGyroY + " " + (String)currGyroZ);
 
@@ -220,11 +240,13 @@ void calibrate() {
                  currGyroX = 0;
 }
 void calculateNewXThreshold() {
-  int xMax = xSamples[0];
+  /*int xMax = xSamples[0];
   int xMin = xSamples[0];
   for (int i = 0; i < 50; i++) {
     if (xSamples[i] > xMax) xMax = xSamples[i];
     if (xSamples[i] < xMin) xMin = xSamples[i];
-  }
+  }*/
   xDynamicThreshold = (xMax + xMin) / 2;
+  xMax=-9999;
+  xMin=9999;
 }
