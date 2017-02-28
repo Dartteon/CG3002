@@ -50,26 +50,19 @@ void setup() {
   pinMode(motor_RightShoulder, OUTPUT);
 }
 
-void setPhase() {
-  READ_LEFT_SHOULDER = (phase == 0);
-  READ_MID = (phase == 1);
-  READ_RIGHT_SHOULDER = (phase == 2);
-  READ_COMPASS = (phase == 3);
-  phase = (phase + 1) % 4;
-}
-
 void loop() {
   switch(phase) {
     case 0: readLeftShoulder();
     break;
     case 1: readRightShoulder();
     break;
-    case 2: readMid();
+    case 2: //readMid();
     break;
     case 3: readHeading();
     break;
   }
-  setPhase();
+  phase = (phase + 1) % 4;
+  delay(100);
 }
 
 void readLeftShoulder() {
@@ -82,16 +75,14 @@ void readLeftShoulder() {
   digitalWrite(uSoundTrigPin_LeftShoulder, LOW);
   durationLeftShoulder = pulseIn(uSoundEchoPin_LeftShoulder, HIGH);
   distanceLeftShoulder = (durationLeftShoulder / 2) / 29.1;
-
 //    Serial.print("L ");
 //    Serial.print(distanceLeftShoulder);
 //    Serial.println(" cm");
-
   digitalWrite(motor_LeftShoulder, (distanceLeftShoulder <= distThreshold_Sides) ? HIGH : LOW);
 }
 void readRightShoulder() {
 
-  long durationLeftShoulder, durationRightShoulder, durationMid;
+  long durationRightShoulder;
   long distanceRightShoulder = 9999;
   digitalWrite(uSoundTrigPin_RightShoulder, LOW);
   delayMicroseconds(2); // Added this line
@@ -100,11 +91,9 @@ void readRightShoulder() {
   digitalWrite(uSoundTrigPin_RightShoulder, LOW);
   durationRightShoulder = pulseIn(uSoundEchoPin_RightShoulder, HIGH);
   distanceRightShoulder = (durationRightShoulder / 2) / 29.1;
-
-//    Serial.print("R ");
-//    Serial.print(distanceRightShoulder);
-//    Serial.println(" cm");
-
+    Serial.print("R ");
+    Serial.print(distanceRightShoulder);
+    Serial.println(" cm");
   digitalWrite(motor_RightShoulder, (distanceRightShoulder <= distThreshold_Sides) ? HIGH : LOW);
 }
 void readMid() {
@@ -117,16 +106,14 @@ void readMid() {
   digitalWrite(uSoundTrigPin_Mid, LOW);
   durationMid = pulseIn(uSoundEchoPin_Mid, HIGH);
   distanceMid = (durationMid / 2) / 29.1;
-
-    Serial.print("M ");
-    Serial.print(distanceMid);
-    Serial.println(" cm");
-
+//    Serial.print("M ");
+//    Serial.print(distanceMid);
+//    Serial.println(" cm");
   digitalWrite(motor_Mid, (distanceMid <= distThreshold_Mid) ? HIGH : LOW);
 }
 
 void readHeading() {
-  if (!READ_COMPASS) return;
+
   compass.read();
   float heading = compass.heading((LSM303::vector<int>) {
     0, 0, 1
