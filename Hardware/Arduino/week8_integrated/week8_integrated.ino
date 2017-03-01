@@ -119,7 +119,7 @@ void readSensor(int i) {
       SonarSensor(trigPin1, echoPin1);
       LeftSensor = distance;
       digitalWrite(motorPin1, (LeftSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-//      Serial.print(LeftSensor);
+//     Serial.print(LeftSensor);
 //      Serial.print(" - ");
       break;
     case 1:
@@ -191,7 +191,7 @@ void readStepCounter() {
 //      Serial.println("TimeDiff = " + (String)timeDiff);
     }
   } else {
-      Serial.println("Step detected but not within interval threshold");
+//      Serial.println("Step detected but not within interval threshold");
   }
 
   incrementSampleCount();
