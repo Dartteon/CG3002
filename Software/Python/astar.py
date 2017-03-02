@@ -11,25 +11,35 @@ engine = pyttsx.init()
 
 def main():
     # Integer input mode for fixed list of maps
-    buildingName = int_to_buildingName()
-    floorNumber = int_to_floorNumber(buildingName)
+    # buildingName = int_to_buildingName()
+    # floorNumber = int_to_floorNumber(buildingName)
 
     # Text input mode for new maps
-    # buildingName = input('Building name: ')
-    # floorNumber = input('Floor number: ')
+    info = None
+    while info is None:
+        buildingNameOrNumber = str(raw_input('Building name or number: '))
+        floorNumber = raw_input('Floor number: ')
 
-    jsonmap = get_json(buildingName, floorNumber)
-    info = jsonmap['info']
+        jsonmap = get_json(buildingNameOrNumber, floorNumber)
+        info = jsonmap['info']
+        if info is None:
+            print('No map available for this building name and floor number combination.')
     wifi = jsonmap['wifi']
     northAt = int(info['northAt'])
     nodeList = get_nodes(jsonmap)
+
+    try:
+        buildingName = int(buildingNameOrNumber)
+        buildingName = 'Building ' + str(buildingName)
+    except ValueError:
+        buildingName = buildingNameOrNumber
 
     # newline()
     print 'Name of the first node at ' + buildingName + ' Floor ' + str(floorNumber) + ' is ' + nodeList[0].nodeName
     print buildingName + ' Floor ' + str(floorNumber) + ' has node IDs from 1 to ' + str(len(nodeList))
     print 'North is at ' + info['northAt'] + ' degrees'
-    startNode = nodeList[int(input('Start node ID: '))-1]
-    goalNode = nodeList[int(input('Goal node ID: '))-1]
+    startNode = nodeList[int(raw_input('Start node ID: '))-1]
+    goalNode = nodeList[int(raw_input('Goal node ID: '))-1]
     newline()
 
     hList = heuristic(goalNode, nodeList)
@@ -185,9 +195,9 @@ def path_to_goal(nodeList, route, northAt):
                 print 'To reach the next node (node ID ' + str(nextNode.nodeId) + ') turn right ' + str(displacement['turnAngle']) + ' degrees and walk ' + str(displacement['distance']) + ' cm'
             else:
                 print 'To reach the next node (node ID ' + str(nextNode.nodeId) + ') walk straight ahead ' + str(displacement['distance']) + ' cm'
-            position['x'] = int(input('Current x: '))
-            position['y'] = int(input('Current y: '))
-            position['heading'] = int(input('Current heading: '))
+            position['x'] = int(raw_input('Current x: '))
+            position['y'] = int(raw_input('Current y: '))
+            position['heading'] = int(raw_input('Current heading: '))
             displacement = displacement_from_position(position, nextNode, northAt)
         reached_message = 'You have reached node ID ' + str(nextNode.nodeId)
         print reached_message
@@ -201,7 +211,7 @@ def int_to_buildingName():
     while (number - 1) not in range(len(buildingNameList)):
         try:
             print('Building?\n1: DemoBuilding\n2: COM1\n3: COM2')
-            number = int(input())
+            number = int(raw_input())
             if number - 1 not in range(len(buildingNameList)):
                 print 'Please enter an integer building index number from the given list.'
         except ValueError:
@@ -216,7 +226,7 @@ def int_to_floorNumber(buildingName):
         try:
             print 'Floor number?'
             print str(floorNumberList[buildingName])
-            floorNumber = int(input())
+            floorNumber = int(raw_input())
             if floorNumber not in floorNumberList[buildingName]:
                 print 'Please enter an integer floor number from the given list.'
         except ValueError:
