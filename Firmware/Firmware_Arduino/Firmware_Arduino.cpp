@@ -13,12 +13,21 @@
 #define MAX_SENDING_PACKET_SIZE 10
 
 typedef struct storageStrt {
-	//int type;
-	int id[MAX_STORAGE_SIZE];
-	int data[MAX_STORAGE_SIZE];
+	int dir[MAX_STORAGE_SIZE];
+	int accelx[MAX_STORAGE_SIZE];
+	int accely[MAX_STORAGE_SIZE];
+	int accelz[MAX_STORAGE_SIZE];
 } Storage;
 
-Storage mainStorage;
+typedef struct distStorageStrt {
+	int dist1[MAX_STORAGE_SIZE]; //Distance from Sensor 1 (Left Arm)
+	int dist2[MAX_STORAGE_SIZE]; //Distance from Sensor 2 (Wand)
+	int dist3[MAX_STORAGE_SIZE]; //Distance from Sensor 3 (Right Arm)
+} DistStorage;
+
+
+Storage mainStorage; //Will probably rename another time to dirAccelStorage
+DistStorage distStorage;
 
 int pos_packet = 0;
 int pos_json = 0;
@@ -61,16 +70,37 @@ static void initialize() {
 }
 
 void addData(void *p) {
-	//dataUnit temp = *((dataUnit*) p);
-	int id1 = 0;
-	int data1 = 1;
+	int dir1 = 1;
+	int accelx1 = 0;
+	int accely1 = 0;
+	int accelz1 = 0;
 
 	for (;;) {
 
 		//Serial.println("addData");
 
-		mainStorage.id[pos_packet] = id1++;
-		mainStorage.data[pos_packet] = data1++;
+		mainStorage.dir[pos_packet] = dir1++;
+		mainStorage.accelx[pos_packet] = accelx1;
+		mainStorage.accely[pos_packet] = accely1;
+		mainStorage.accelz[pos_packet] = accelz1;
+
+		pos_packet = (pos_packet + 1) % MAX_STORAGE_SIZE;
+
+		vTaskDelay(20);
+	}
+
+}
+
+void addDistanceData(void *p) {
+	//dataUnit temp = *((dataUnit*) p);
+	int dist1 = 1;
+	int dist2 = 1;
+	int dist3 = 0;
+
+	for (;;) {
+		distStorage.dist1[pos_packet] = dist1++;
+		distStorage.dist2[pos_packet] = dist2;
+		distStorage.dist3[pos_packet] = dist3;
 
 		//Serial.println(newPacket.id[counter]);
 
@@ -81,6 +111,7 @@ void addData(void *p) {
 
 }
 
+
 void transmit(void *p) {
 	int i = 0;
 	for (;;) {
@@ -90,14 +121,18 @@ void transmit(void *p) {
 
 		StaticJsonBuffer<256> jsonBuffer;
 		JsonObject& json = jsonBuffer.createObject();
-		JsonArray& id = json.createNestedArray("id");
-		JsonArray& data = json.createNestedArray("data");
+		JsonArray& dir = json.createNestedArray("dir");
+		JsonArray& accelx = json.createNestedArray("accelx");
+		JsonArray& accely = json.createNestedArray("accely");
+		JsonArray& accelz = json.createNestedArray("accelz");
 		int checksum = 0;
 
 		for (i = 0; (pos_json != pos_packet) && (i < MAX_SENDING_PACKET_SIZE); i++) {
-			id.add(mainStorage.id[pos_json]);
-			data.add(mainStorage.data[pos_json]);
-			checksum = (checksum + mainStorage.data[pos_json]) %256;
+			dir.add(mainStorage.dir[pos_json]);
+			accelx.add(mainStorage.accelx[pos_json]);
+			accely.add(mainStorage.accely[pos_json]);
+			accelz.add(mainStorage.accelz[pos_json]);
+			checksum = (checksum + mainStorage.dir[pos_json]) %256;
 			pos_json = (pos_json + 1) % MAX_STORAGE_SIZE;
 
 		}
@@ -116,6 +151,9 @@ void transmit(void *p) {
 
 		if (Serial1.available()){
 			char msg = Serial1.read();
+			if (msg =='n'){
+				pos_json = pos_backup;
+			}
 			Serial.println(msg);
 		}
 		else {
@@ -151,39 +189,3 @@ void setup() {
 void loop() {
 
 }
-
-/*
- void produce2(void *p) {
- int counter = 1;
- for (;;) {
- counter += 2;
- if (xQueueSendToBack(xQueue, (void * ) &counter,
- (TickType_t ) 0) != pdPASS) {
- xSemaphoreTake(xSemaphore, portMAX_DELAY);
- Serial.println("Message Queue Full");
- xSemaphoreGive(xSemaphore);
- }
- }
- }
- */
-
-/*
- void transmit(void *p) {
- int counter = 1;
- Packet packetSend;
- for (;;) {
- if (xQueueReceive(xQueue, &packetSend,
- (TickType_t) portMAX_DELAY) == pdTRUE) {
- xSemaphoreTake(xSemaphore, portMAX_DELAY);
- Serial.println("begin sendData");
- Serial.println("Packet number: " + counter);
- for (int i = 0; i < MAX_STACK_SIZE; i++) {
- Serial.println(packetSend.id[i]);
- Serial.println(packetSend.data[i]);
- }
- Serial.println(packetSend.checksum);
- xSemaphoreGive(xSemaphore);
- }
- }
- }
- */
