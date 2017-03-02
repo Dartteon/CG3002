@@ -176,6 +176,8 @@ def displacement_from_position(position, node, northAt):
         turnAngle = bearing - position['heading']
     if turnAngle > 180:
         turnAngle -= 360
+    elif turnAngle <= -180:
+        turnAngle += 360
     displacement = {'distance':int(distance), 'turnAngle':int(turnAngle)}
     return displacement
 
