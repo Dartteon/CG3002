@@ -232,6 +232,7 @@ def direction_for_user(turnAngle):
         direction = 'left and further slight left turn'
     else:
         direction = 'uturn'
+    return direction
 
 def instruction_for_user(direction, distance, nextNode):
     if direction is 'straight':
@@ -270,6 +271,8 @@ def int_to_floorNumber(buildingName):
     return floorNumber
 
 def text_to_speech(text):
+    # For testing on Chris' mac
+    # print 'Text-to-speech goes here'
     engine.say(text)
     engine.runAndWait()
 
