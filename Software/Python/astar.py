@@ -190,13 +190,14 @@ def path_to_goal(nodeList, route, northAt):
         index += 1
         nextNode = nodeList[route[index]-1]
         displacement = displacement_from_position(position, nextNode, northAt)
+        # If the user is within 20cm to the next node, we will take it as they have reached that node
         while displacement['distance'] > 20:
-            if displacement['turnAngle'] < 0:
-                print 'To reach the next node (node ID ' + str(nextNode.nodeId) + ') turn left ' + str(-displacement['turnAngle']) + ' degrees and walk ' + str(displacement['distance']) + ' cm'
-            elif displacement['turnAngle'] > 0:
-                print 'To reach the next node (node ID ' + str(nextNode.nodeId) + ') turn right ' + str(displacement['turnAngle']) + ' degrees and walk ' + str(displacement['distance']) + ' cm'
-            else:
-                print 'To reach the next node (node ID ' + str(nextNode.nodeId) + ') walk straight ahead ' + str(displacement['distance']) + ' cm'
+            direction = direction_for_user(displacement['turnAngle'])
+            instruction = instruction_for_user(direction, displacement['distance'], nextNode.nodeId)
+
+            print instruction
+            text_to_speech(instruction)
+
             position['x'] = int(raw_input('Current x: '))
             position['y'] = int(raw_input('Current y: '))
             position['heading'] = int(raw_input('Current heading: '))
@@ -206,6 +207,38 @@ def path_to_goal(nodeList, route, northAt):
         text_to_speech(reached_message)
         previousNode = nextNode
     text_to_speech('You have reached the final node')
+
+def direction_for_user(turnAngle):
+    # If angle is between -10 and 10 degrees, ignore it and let the user walks straight
+    if turnAngle >= -20 and turnAngle <= 20:
+        direction = 'straight'
+
+    # Slight turn to the right and left
+    elif turnAngle > 21 and turnAngle <=65:
+        direction = 'slight right turn'
+    elif turnAngle < -21 and turnAngle >= -65:
+        direction = 'slight left turn'
+
+    # Right angle turn to the right and left
+    elif turnAngle > 66 and turnAngle <= 125:
+        direction = 'right turn'
+    elif turnAngle < -66 and turnAngle >= -125:
+        direction = 'left turn'
+
+    # Major turn to the right and left
+    elif turnAngle > 126 and turnAngle <= 160:
+        direction = 'right and further slight right turn'
+    elif turnAngle < - 126 and turnAngle >= -160:
+        direction = 'left and further slight left turn'
+    else:
+        direction = 'uturn'
+
+def instruction_for_user(direction, distance, nextNode):
+    if direction is 'straight':
+        instruction = 'To reach the next node (node ID ' + str(nextNode) + ') walk straight ' + str(distance) + ' cm.'
+    else:
+        instruction = 'To reach the next node (node ID ' + str(nextNode) + ') make a ' + direction + ' and walk ' + str(distance) + ' cm.'
+    return instruction
 
 def int_to_buildingName():
     buildingNameList = ['DemoBuilding', 'COM1', 'COM2']
