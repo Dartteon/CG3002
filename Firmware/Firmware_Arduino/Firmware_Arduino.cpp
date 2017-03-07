@@ -7,17 +7,20 @@
 #include <task.h>
 #include <semphr.h>
 
-#define PIN_PTTM 0
+//Hardware
+#define PIN_TEST_SWITCH 10
+
+//Firmware
 #define STACK_SIZE 1024
 #define MAX_STORAGE_SIZE 100
 #define MAX_SENDING_PACKET_SIZE 10
 
 // Hardware Variables
-int dir_value = 1;
-int accelx_value = 1;
-int accely_value = 1;
-int accelz_value = 1;
-int timestamp_value = 1;
+int dir_value = 0;
+int accelx_value = 0;
+int accely_value = 0;
+int accelz_value = 0;
+int timestamp_value = 0;
 
 
 // Firmware Variables
@@ -83,6 +86,8 @@ void getStepCountData(void *p){
 	// TO BE COMPLETED BY HARDWARE
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+
+//		dir_value = digitalRead(PIN_TEST_SWITCH); // tested and worked successfully
 		dir_value = dir_value + 1; // dir_value = analogRead(PIN_DIR);
 		accelx_value = accelx_value + 1; // accelx_value = analogRead(PIN_ACCELX);
 		accely_value = accely_value + 1; // accely_value = analogRead(PIN_ACCELY);
@@ -135,7 +140,6 @@ void transmitStepCountData(void *p) {
 			timestamp.add(stepCountStorage.timestamp[pos_json]);
 			checksum = (checksum + stepCountStorage.dir[pos_json]) %256;
 			pos_json = (pos_json + 1) % MAX_STORAGE_SIZE;
-
 		}
 
 		json["checksum"] = checksum;
@@ -181,6 +185,8 @@ void setup() {
 	Serial.println("begin");
 	initialize();
 	Serial.println("begin2");
+
+//	pinMode(PIN_TEST_SWITCH, INPUT);
 
 	xTaskCreate(getStepCountData, "getStepCountData", STACK_SIZE, NULL, 1, NULL);
 	xTaskCreate(addStepCountData, "addStepCountData", STACK_SIZE, NULL, 2, NULL);
