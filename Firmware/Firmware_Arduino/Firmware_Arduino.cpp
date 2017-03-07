@@ -12,6 +12,15 @@
 #define MAX_STORAGE_SIZE 100
 #define MAX_SENDING_PACKET_SIZE 10
 
+// Hardware Variables
+int dir_value = 1;
+int accelx_value = 1;
+int accely_value = 1;
+int accelz_value = 1;
+int timestamp_value = 1;
+
+
+// Firmware Variables
 typedef struct stepCountStorageStrt {
 	int dir[MAX_STORAGE_SIZE];
 	int accelx[MAX_STORAGE_SIZE];
@@ -26,7 +35,6 @@ typedef struct obstDetectionStrt {
 	int dist3[MAX_STORAGE_SIZE]; //Distance from Sensor 3 (Right Arm)
 	int timestamp[MAX_STORAGE_SIZE];
 } ObstDetectionStorage;
-
 
 StepCountStorage stepCountStorage;
 ObstDetectionStorage obstDetectionStorage;
@@ -71,53 +79,37 @@ static void initialize() {
 	}
 }
 
-void addStepCountDataToStorage(void *p) {
-	int dir1 = 1;
-	int accelx1 = 0;
-	int accely1 = 0;
-	int accelz1 = 0;
-	int timestamp1 = 0;
-
+void getStepCountData(void *p){
+	// TO BE COMPLETED BY HARDWARE
 	for (;;) {
+		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+		dir_value = dir_value + 1; // dir_value = analogRead(PIN_DIR);
+		accelx_value = accelx_value + 1; // accelx_value = analogRead(PIN_ACCELX);
+		accely_value = accely_value + 1; // accely_value = analogRead(PIN_ACCELY);
+		accelz_value = accelz_value + 1; // accelz_value = analogRead(PIN_ACCELZ);
+		timestamp_value = timestamp_value + 1; // timestamp_value = getTime();
 
+		xSemaphoreGive(xSemaphore);
+		vTaskDelay(20);
+	}
+}
+
+void addStepCountData(void *p) {
+	for (;;) {
+		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 		//Serial.println("addStepCountData");
-
-		stepCountStorage.dir[pos_packet] = dir1++;
-		stepCountStorage.accelx[pos_packet] = accelx1++;
-		stepCountStorage.accely[pos_packet] = accely1++;
-		stepCountStorage.accelz[pos_packet] = accelz1++;
-		stepCountStorage.timestamp[pos_packet] = timestamp1++;
-
-		pos_packet = (pos_packet + 1) % MAX_STORAGE_SIZE;
-
-		vTaskDelay(20);
-	}
-
-}
-
-void addObstDetectionDataToStorage(void *p) {
-	//dataUnit temp = *((dataUnit*) p);
-	int dist1 = 1;
-	int dist2 = 1;
-	int dist3 = 0;
-	int timestamp1 = 0;
-
-	for (;;) {
-
-		//Serial.println("addObstDetectionData");
-
-		obstDetectionStorage.dist1[pos_packet] = dist1++;
-		obstDetectionStorage.dist2[pos_packet] = dist2++;
-		obstDetectionStorage.dist3[pos_packet] = dist3++;
-		obstDetectionStorage.timestamp[pos_packet] = timestamp1++;
+		stepCountStorage.dir[pos_packet] = dir_value;
+		stepCountStorage.accelx[pos_packet] = accelx_value;
+		stepCountStorage.accely[pos_packet] = accely_value;
+		stepCountStorage.accelz[pos_packet] = accelz_value;
+		stepCountStorage.timestamp[pos_packet] = timestamp_value;
 
 		pos_packet = (pos_packet + 1) % MAX_STORAGE_SIZE;
 
+		xSemaphoreGive(xSemaphore);
 		vTaskDelay(20);
 	}
-
 }
-
 
 void transmitStepCountData(void *p) {
 	int i = 0;
@@ -172,7 +164,6 @@ void transmitStepCountData(void *p) {
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(100);
 	}
-
 }
 
 
@@ -191,8 +182,9 @@ void setup() {
 	initialize();
 	Serial.println("begin2");
 
-	xTaskCreate(addStepCountDataToStorage, "addStepCountData", STACK_SIZE, NULL, 1, NULL);
-	xTaskCreate(transmitStepCountData, "sendStepCountData", STACK_SIZE, NULL, 2, NULL);
+	xTaskCreate(getStepCountData, "getStepCountData", STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(addStepCountData, "addStepCountData", STACK_SIZE, NULL, 2, NULL);
+	xTaskCreate(transmitStepCountData, "sendStepCountData", STACK_SIZE, NULL, 3, NULL);
 }
 
 void loop() {
