@@ -22,9 +22,9 @@ int accely_value = 0;
 int accelz_value = 0;
 int sc_timestamp_value = 0;
 
-int dist1_value = 100;
-int dist2_value = 100;
-int dist3_value = 100;
+int dist1_value = 0;
+int dist2_value = 0;
+int dist3_value = 0;
 int od_timestamp_value = 0;
 
 
@@ -38,19 +38,20 @@ typedef struct stepCountStorageStrt {
 } StepCountStorage;
 
 typedef struct obstDetectionStrt {
-	int dist1; // Distance from Sensor 1 (Left Arm)
-	int dist2; // Distance from Sensor 2 (Wand)
-	int dist3; // Distance from Sensor 3 (Right Arm)
-	int timestamp;
+	int dist1[MAX_STORAGE_SIZE];; // Distance from Sensor 1 (Left Arm)
+	int dist2[MAX_STORAGE_SIZE];; // Distance from Sensor 2 (Wand)
+	int dist3[MAX_STORAGE_SIZE];; // Distance from Sensor 3 (Right Arm)
+	int timestamp[MAX_STORAGE_SIZE];;
 } ObstDetectionStorage;
 
 StepCountStorage stepCountStorage;
 ObstDetectionStorage obstDetectionStorage;
 
-int pos_packet = 0;
-int pos_json = 0;
+int sc_pos_packet = 0;
+int sc_pos_json = 0;
 
-static BaseType_t xHigherPriorityTaskWoken;
+int od_pos_packet = 0;
+int od_pos_json = 0;
 
 SemaphoreHandle_t xSemaphore = NULL;
 
@@ -94,6 +95,8 @@ void getStepCountData(void *p){
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
+		Serial.println("getStepCountData");
+
 //		dir_value = digitalRead(PIN_TEST_SWITCH); // tested and worked successfully
 		dir_value = dir_value + 1; // dir_value = analogRead(PIN_DIR);
 		accelx_value = accelx_value + 1; // accelx_value = analogRead(PIN_ACCELX);
@@ -109,14 +112,16 @@ void getStepCountData(void *p){
 void addStepCountData(void *p) {
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-		//Serial.println("addStepCountData");
-		stepCountStorage.dir[pos_packet] = dir_value;
-		stepCountStorage.accelx[pos_packet] = accelx_value;
-		stepCountStorage.accely[pos_packet] = accely_value;
-		stepCountStorage.accelz[pos_packet] = accelz_value;
-		stepCountStorage.timestamp[pos_packet] = sc_timestamp_value;
 
-		pos_packet = (pos_packet + 1) % MAX_STORAGE_SIZE;
+		Serial.println("addStepCountData");
+
+		stepCountStorage.dir[sc_pos_packet] = dir_value;
+		stepCountStorage.accelx[sc_pos_packet] = accelx_value;
+		stepCountStorage.accely[sc_pos_packet] = accely_value;
+		stepCountStorage.accelz[sc_pos_packet] = accelz_value;
+		stepCountStorage.timestamp[sc_pos_packet] = sc_timestamp_value;
+
+		sc_pos_packet = (sc_pos_packet + 1) % MAX_STORAGE_SIZE;
 
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(20);
@@ -127,8 +132,9 @@ void transmitStepCountData(void *p) {
 	int i = 0;
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-		int pos_backup = pos_json;
-		Serial.println("sendStepCountData");
+		int sc_pos_backup = sc_pos_json;
+
+		Serial.println("transmitStepCountData");
 
 		StaticJsonBuffer<512> jsonBuffer;
 		JsonObject& json = jsonBuffer.createObject();
@@ -139,14 +145,14 @@ void transmitStepCountData(void *p) {
 		JsonArray& timestamp = json.createNestedArray("timestamp");
 		int checksum = 0;
 
-		for (i = 0; (pos_json != pos_packet) && (i < MAX_SENDING_PACKET_SIZE); i++) {
-			dir.add(stepCountStorage.dir[pos_json]);
-			accelx.add(stepCountStorage.accelx[pos_json]);
-			accely.add(stepCountStorage.accely[pos_json]);
-			accelz.add(stepCountStorage.accelz[pos_json]);
-			timestamp.add(stepCountStorage.timestamp[pos_json]);
-			checksum = (checksum + stepCountStorage.dir[pos_json]) %256;
-			pos_json = (pos_json + 1) % MAX_STORAGE_SIZE;
+		for (i = 0; (sc_pos_json != sc_pos_packet) && (i < MAX_SENDING_PACKET_SIZE); i++) {
+			dir.add(stepCountStorage.dir[sc_pos_json]);
+			accelx.add(stepCountStorage.accelx[sc_pos_json]);
+			accely.add(stepCountStorage.accely[sc_pos_json]);
+			accelz.add(stepCountStorage.accelz[sc_pos_json]);
+			timestamp.add(stepCountStorage.timestamp[sc_pos_json]);
+			checksum = (checksum + stepCountStorage.timestamp[sc_pos_json]) %256;
+			sc_pos_json = (sc_pos_json + 1) % MAX_STORAGE_SIZE;
 		}
 
 		json["checksum"] = checksum;
@@ -166,13 +172,13 @@ void transmitStepCountData(void *p) {
 		if (Serial1.available()){
 			char msg = Serial1.read();
 			if (msg =='n'){
-				pos_json = pos_backup;
+				sc_pos_json = sc_pos_backup;
 			}
 			Serial.println(msg);
 		}
 		else {
 			Serial.println("error");
-			pos_json = pos_backup;
+			sc_pos_json = sc_pos_backup;
 		}
 
 		xSemaphoreGive(xSemaphore);
@@ -185,10 +191,11 @@ void getObstDetectionData(void *p){
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
-//		dist1_value = digitalRead(PIN_TEST_SWITCH); // yet to test
-		dist1_value = dist1_value + 1; // dist1_value = analogRead(PIN_DIST1);
-		dist2_value = dist2_value; // dist2_value = analogRead(PIN_DIST2);
-		dist3_value = dist3_value; // dist3_value = analogRead(PIN_DIST3);
+		Serial.println("getObstDetectionData");
+
+		dist1_value = dist1_value + 10; // dist1_value = analogRead(PIN_DIST1);
+		dist2_value = dist2_value + 10; // dist2_value = analogRead(PIN_DIST2);
+		dist3_value = dist3_value + 10; // dist3_value = analogRead(PIN_DIST3);
 		od_timestamp_value = od_timestamp_value; // od_timestamp_value = getTime();
 
 		xSemaphoreGive(xSemaphore);
@@ -200,65 +207,75 @@ void getObstDetectionData(void *p){
 void addObstDetectionData(void *p) {
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-		//Serial.println("addObstDetectionData");
 
-		obstDetectionStorage.dist1 = dist1_value;
-		obstDetectionStorage.dist2 = dist2_value;
-		obstDetectionStorage.dist3 = dist3_value;
-		obstDetectionStorage.timestamp = od_timestamp_value;
+		Serial.println("addObstDetectionData");
+
+		obstDetectionStorage.dist1[od_pos_packet] = dist1_value;
+		obstDetectionStorage.dist2[od_pos_packet] = dist2_value;
+		obstDetectionStorage.dist3[od_pos_packet] = dist3_value;
+		obstDetectionStorage.timestamp[od_pos_packet] = od_timestamp_value;
+
+		od_pos_packet = (od_pos_packet + 1) % MAX_STORAGE_SIZE;
 
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(20);
 	}
 }
 
-void transmitObstDetectionData() {
-	// %5 is just for example. when integrating, hardware should tell firmware the condition to interrupt
-	if ((obstDetectionStorage.dist1 % 5) == 0) {
-		//interrupt
-		for (;;) {
-			xSemaphoreTake(xSemaphore, portMAX_DELAY);
-			Serial.println("sendObstDetectionData");
+void transmitObstDetectionData(void *p) {
 
-			StaticJsonBuffer<256> jsonBuffer;
-			JsonObject& json = jsonBuffer.createObject();
+	int i = 0;
+	for (;;) {
+		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+		int od_pos_backup = od_pos_json;
 
-			int checksum = 0;
-			checksum = (checksum + obstDetectionStorage.dist1) %256;
+		Serial.println("transmitObstDetectionData");
 
-			json["dist1"] = obstDetectionStorage.dist1;
-			json["dist2"] = obstDetectionStorage.dist2;
-			json["dist3"] = obstDetectionStorage.dist3;
-			json["timestamp"] = obstDetectionStorage.timestamp;
-			json["checksum"] = checksum;
+		StaticJsonBuffer<512> jsonBuffer;
+		JsonObject& json = jsonBuffer.createObject();
+		JsonArray& dist1 = json.createNestedArray("dist1");
+		JsonArray& dist2 = json.createNestedArray("dist2");
+		JsonArray& dist3 = json.createNestedArray("dist3");
+		JsonArray& timestamp = json.createNestedArray("timestamp");
+		int checksum = 0;
 
-			//might fuck up
-			while(!Serial1){
-
-			}
-
-			json.printTo(Serial1);
-
-			//might fuck up
-			while (!(Serial1 && Serial1.available())){
-
-			}
-
-			if (Serial1.available()){
-				char msg = Serial1.read();
-				if (msg =='n'){
-					//something bad happened
-				}
-				Serial.println(msg);
-			}
-			else {
-				Serial.println("error");
-				//something bad happened
-			}
-
-			xSemaphoreGive(xSemaphore);
-			vTaskDelay(100);
+		for (i = 0; (od_pos_json != od_pos_packet) && (i < MAX_SENDING_PACKET_SIZE); i++) {
+			dist1.add(obstDetectionStorage.dist1[od_pos_json]);
+			dist2.add(obstDetectionStorage.dist2[od_pos_json]);
+			dist3.add(obstDetectionStorage.dist3[od_pos_json]);
+			timestamp.add(obstDetectionStorage.timestamp[od_pos_json]);
+			checksum = (checksum + obstDetectionStorage.timestamp[od_pos_json]) %256;
+			od_pos_json = (od_pos_json + 1) % MAX_STORAGE_SIZE;
 		}
+
+		json["checksum"] = checksum;
+
+		//might fuck up
+		while(!Serial1){
+
+		}
+
+		json.printTo(Serial1);
+
+		//might fuck up
+		while (!(Serial1 && Serial1.available())){
+
+		}
+
+		if (Serial1.available()){
+			char msg = Serial1.read();
+			if (msg =='n'){
+				od_pos_json = od_pos_backup;
+			}
+			Serial.println(msg);
+		}
+		else {
+			Serial.println("error");
+			od_pos_json = od_pos_backup;
+		}
+
+		xSemaphoreGive(xSemaphore);
+		vTaskDelay(100);
 	}
 }
 
@@ -279,12 +296,13 @@ void setup() {
 
 //	pinMode(PIN_TEST_SWITCH, INPUT);
 
-	xTaskCreate(getObstDetectionData, "getObstDetectionData", STACK_SIZE, NULL, 1, NULL);
-	xTaskCreate(addObstDetectionData, "addObstDetectionData", STACK_SIZE, NULL, 2, NULL);
+//	xTaskCreate(getObstDetectionData, "getObstDetectionData", STACK_SIZE, NULL, 1, NULL);
+//	xTaskCreate(addObstDetectionData, "addObstDetectionData", STACK_SIZE, NULL, 2, NULL);
+//	xTaskCreate(transmitObstDetectionData, "transmitObstDetectionData", STACK_SIZE, NULL, 3, NULL);
 
-	xTaskCreate(getStepCountData, "getStepCountData", STACK_SIZE, NULL, 1, NULL);
-	xTaskCreate(addStepCountData, "addStepCountData", STACK_SIZE, NULL, 2, NULL);
-	xTaskCreate(transmitStepCountData, "sendStepCountData", STACK_SIZE, NULL, 3, NULL);
+	xTaskCreate(getStepCountData, "getStepCountData", STACK_SIZE, NULL, 4, NULL);
+	xTaskCreate(addStepCountData, "addStepCountData", STACK_SIZE, NULL, 5, NULL);
+	xTaskCreate(transmitStepCountData, "transmitStepCountData", STACK_SIZE, NULL, 6, NULL);
 }
 
 void loop() {

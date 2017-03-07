@@ -27,7 +27,7 @@ while True:
 		print (readings)
 		json0 = json.loads(readings)
 		checksumPi = 0;
-		for data in json0['dir']:
+		for data in json0['timestamp']:
 			checksumPi = (checksumPi + data) % 256
 			if (checksumPi ==json0['checksum']):
 				msg = 'a'
