@@ -109,7 +109,8 @@ void getStepCountData(void *p){
 	}
 }
 
-void addStepCountData(void *p) {
+//for firmware use only
+void addStepCountDataDebug(void *p) {
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
@@ -126,6 +127,21 @@ void addStepCountData(void *p) {
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(20);
 	}
+}
+
+//real API
+//hardware use this to put data into firmware storage
+void addStepCountData(int dir, int accelx, int accely, int accelz,
+		int timestamp) {
+	Serial.println("addStepCountData");
+
+	stepCountStorage.dir[sc_pos_packet] = dir;
+	stepCountStorage.accelx[sc_pos_packet] = accelx;
+	stepCountStorage.accely[sc_pos_packet] = accely;
+	stepCountStorage.accelz[sc_pos_packet] = accelz;
+	stepCountStorage.timestamp[sc_pos_packet] = timestamp;
+
+	sc_pos_packet = (sc_pos_packet + 1) % MAX_STORAGE_SIZE;
 }
 
 void transmitStepCountData(void *p) {
@@ -196,7 +212,7 @@ void getObstDetectionData(void *p){
 		dist1_value = dist1_value + 10; // dist1_value = analogRead(PIN_DIST1);
 		dist2_value = dist2_value + 10; // dist2_value = analogRead(PIN_DIST2);
 		dist3_value = dist3_value + 10; // dist3_value = analogRead(PIN_DIST3);
-		od_timestamp_value = od_timestamp_value; // od_timestamp_value = getTime();
+		//od_timestamp_value = od_timestamp_value; // od_timestamp_value = getTime();
 
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(20);
@@ -301,7 +317,7 @@ void setup() {
 //	xTaskCreate(transmitObstDetectionData, "transmitObstDetectionData", STACK_SIZE, NULL, 3, NULL);
 
 	xTaskCreate(getStepCountData, "getStepCountData", STACK_SIZE, NULL, 4, NULL);
-	xTaskCreate(addStepCountData, "addStepCountData", STACK_SIZE, NULL, 5, NULL);
+	xTaskCreate(addStepCountDataDebug, "addStepCountData", STACK_SIZE, NULL, 5, NULL);
 	xTaskCreate(transmitStepCountData, "transmitStepCountData", STACK_SIZE, NULL, 6, NULL);
 }
 
