@@ -130,25 +130,25 @@ void readCompass() {
 	float heading = compass.heading((LSM303::vector<int>) {
 		0, 0, 1
 	});
-	Serial.print("readCompass"); Serial.print(" - ");
+	Serial.print("Compass"); Serial.print(" ");
 	Serial.println(heading);
 }
 
 
 void readSensor(int i) {
-	Serial.print("readSensor "); Serial.print(i); Serial.print(" - ");
+	Serial.print("Sensor "); Serial.print(i); Serial.print(" ");
 	switch (i) {
 		case 0:
 			SonarSensor(trigPin1, echoPin1);
 			LeftSensor = distance;
 			digitalWrite(motorPin1, (LeftSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-			Serial.print(LeftSensor); Serial.print(" - ");
+			Serial.println(LeftSensor);
 			break;
 		case 1:
 			SonarSensor(trigPin2, echoPin2);
 			FrontSensor = distance;
 			digitalWrite(motorPin2, (FrontSensor <= DIST_THRESHOLD_MID) ? HIGH : LOW);
-			Serial.print(FrontSensor); Serial.print(" - ");
+			Serial.println(FrontSensor);
 			break;
 		case 2:
 			SonarSensor(trigPin3, echoPin3);
@@ -162,22 +162,18 @@ void readSensor(int i) {
 // ================= Accelerometer
 
 void calculateNewXThreshold() {
-	Serial.println("Begin: calculateNewXThreshold");
 	xDynamicThreshold = (xMax + xMin) / 2;
 	Serial.print("xDynamicThreshold = "); Serial.println(xDynamicThreshold);
 	xMax = -9999;
 	xMin = 9999;
-	Serial.println("End: calculateNewXThreshold");
 }
 
 void incrementSampleCount() {
-	Serial.println("Begin: incrementSampleCount");
 	if (currSampleCount >= NUM_SAMPLE_COUNTS_TO_RECALCULATE_THRESHOLD - 1) {
 		calculateNewXThreshold(); //Set new threshold
 		currSampleCount = 0;
 	}
 	else currSampleCount++;
-	Serial.println("End: incrementSampleCount");
 }
 
 void readAltimu() {
@@ -198,39 +194,9 @@ void readAltimu() {
 	}
 	currGyroY = (int) compass.a.y - yAccOffset;
 	currGyroZ = (int) compass.a.z - zAccOffset;
-	Serial.print("GryoX "); Serial.print(newAccX); Serial.print(" ");
-	Serial.print("GryoY "); Serial.print(currGyroY); Serial.print(" ");
+	Serial.print("GryoX "); Serial.println(newAccX);
+	Serial.print("GryoY "); Serial.println(currGyroY);
 	Serial.print("GryoZ "); Serial.println(currGyroZ);
-}
-
-// Excluding function since software will be handling step counting
-// TODO: Shift function to software code base
-void readStepCounter() {
-	Serial.println("Begin: readStepCounter");
-	int prevSample = xSampleNew; //Get previous reading
-	readAltimu();
-	int xAccDelta = abs(prevSample - xSampleNew);
-	unsigned long currTime = millis();
-	unsigned long timeDiff = currTime - lastStepTime;
-
-	//if (xAccDelta <= MINIMUM_ACCELERATION_DELTA) return;
-	if (xAccDelta < MINIMUM_ACCELERATION_DELTA) return;  //Check that walker has accelerated significantly
-	if (timeDiff < MINIMUM_STEP_INTERVAL_MILLISECONDS) return; //Check that steps arent double counted
-	if (currGyroZ < MINIMUM_ACCELERATION_Z) return; //Check that walker is accelerating forward
-	//xSamples[currSampleCount] = xSampleNew; //Not needed anymore, removal TBI
-
-	if (timeDiff >= MINIMUM_STEP_INTERVAL_MILLISECONDS) {
-		if (xSampleNew < xDynamicThreshold) {
-			lastStepTime = currTime;
-			numStepsTaken++;
-			int totalDist = DIST_PER_STEP_CM * numStepsTaken;
-			Serial.print("Step taken! Total steps - " + (String)numStepsTaken + " ---- AccZ = ");
-			Serial.print(currGyroZ);
-			Serial.println(" ");
-		}
-	} else {
-		Serial.println("Step detected but not within interval threshold");
-	}
 }
 
 void calibrate() {
@@ -261,60 +227,54 @@ void getAccelReadings(void *p){
 		readAltimu();
 
 		xSemaphoreGive(xSemaphore);
-		vTaskDelay(20);
+		vTaskDelay(1);
 	}
 }
 
-void getSensorReadings(void *p) {
+void getSensor1Readings(void *p){
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
 		readSensor(0);
-		readSensor(1);
-		readSensor(2);
 
 		xSemaphoreGive(xSemaphore);
-		vTaskDelay(20);
+		vTaskDelay(25);
 	}
 }
 
-void getCompassReadings(void *p){
+void getSensor2Readings(void *p){
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
-		readCompass();
+		readSensor(1);
 
 		xSemaphoreGive(xSemaphore);
-		vTaskDelay(20);
+		vTaskDelay(25);
 	}
 }
 
-//void getSensor1Readings(void *p){
+void getSensor3Readings(void *p){
+	for (;;) {
+		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+
+		readSensor(2);
+
+		xSemaphoreGive(xSemaphore);
+		vTaskDelay(25);
+	}
+}
+
+//void getCompassReadings(void *p){
 //	for (;;) {
 //		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-//		readSensor(0);
-//		xSemaphoreGive(xSemaphore);
-//		vTaskDelay(20);
-//	}
-//}
 //
-//void getSensor2Readings(void *p){
-//	for (;;) {
-//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-//		readSensor(1);
-//		xSemaphoreGive(xSemaphore);
-//		vTaskDelay(20);
-//	}
-//}
+//		readCompass();
 //
-//void getSensor3Readings(void *p){
-//	for (;;) {
-//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-//		readSensor(2);
 //		xSemaphoreGive(xSemaphore);
 //		vTaskDelay(20);
 //	}
 //}
+
 
 //  ===============================  Firmware Functions  ===============================
 static void initialize() {
@@ -483,12 +443,11 @@ void setup() {
 	calibrate();
 
 	//  ===============================  Create Hardware Tasks  ===============================
-	xTaskCreate(getAccelReadings, "getAccelReadings", 6*STACK_SIZE, NULL, 1, NULL);
-//	xTaskCreate(getSensorReadings, "getSensorReadings", 6*STACK_SIZE, NULL, 2, NULL);
-//	xTaskCreate(getCompassReadings, "getCompassReadings", 4*STACK_SIZE, NULL, 1, NULL); // Not using for now
-//	xTaskCreate(getSensor1Readings, "getSensor1Readings", 4*STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings don't work
-//	xTaskCreate(getSensor2Readings, "getSensor2Readings", 4*STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings don't work
-//	xTaskCreate(getSensor3Readings, "getSensor3Readings", 4*STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings don't work
+	xTaskCreate(getAccelReadings, "getAccelReadings", STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(getSensor1Readings, "getSensor1Readings", STACK_SIZE, NULL, 2, NULL);
+	xTaskCreate(getSensor2Readings, "getSensor2Readings", STACK_SIZE, NULL, 2, NULL);
+	xTaskCreate(getSensor3Readings, "getSensor3Readings", STACK_SIZE, NULL, 2, NULL);
+//	xTaskCreate(getCompassReadings, "getCompassReadings", STACK_SIZE, NULL, 1, NULL); // Not using for now
 
 	//  ===============================  Setup Firmware Connection  ===============================
 	Serial.flush();
