@@ -130,12 +130,13 @@ void readCompass() {
 	float heading = compass.heading((LSM303::vector<int>) {
 		0, 0, 1
 	});
+	Serial.print("readCompass"); Serial.print(" - ");
 	Serial.println(heading);
 }
 
 
 void readSensor(int i) {
-	Serial.println("Begin: readSensor" + i);
+	Serial.print("readSensor "); Serial.print(i); Serial.print(" - ");
 	switch (i) {
 		case 0:
 			SonarSensor(trigPin1, echoPin1);
@@ -156,7 +157,6 @@ void readSensor(int i) {
 			Serial.println(RightSensor);
 			break;
 	}
-	Serial.println("Begin: readSensor" + i);
 }
 
 // ================= Accelerometer
@@ -181,7 +181,6 @@ void incrementSampleCount() {
 }
 
 void readAltimu() {
-	Serial.println("Begin: readAltimu");
 	compass.read();
 	xSampleOld = xSampleNew;  //Compulsory shift in
 	int newAccX = (int) compass.a.x - xAccOffset;
@@ -200,9 +199,10 @@ void readAltimu() {
 	currGyroY = (int) compass.a.y - yAccOffset;
 	currGyroZ = (int) compass.a.z - zAccOffset;
 	Serial.println("Gyro " + (String)newAccX + " " + (String)currGyroY + " " + (String)currGyroZ);
-	Serial.println("End: readAltimu");
 }
 
+// Excluding function since software will be handling step counting
+// TODO: Shift function to software code base
 void readStepCounter() {
 	Serial.println("Begin: readStepCounter");
 	int prevSample = xSampleNew; //Get previous reading
@@ -229,11 +229,9 @@ void readStepCounter() {
 	} else {
 		Serial.println("Step detected but not within interval threshold");
 	}
-	Serial.println("End: readStepCounter");
 }
 
 void calibrate() {
-	Serial.println("Begin: calibrate");
 	int NUM_SAMPLES = 128;
 	long xGyroSum = 0;
 	long yGyroSum = 0;
@@ -250,65 +248,71 @@ void calibrate() {
 	Serial.println("Calibrated " + (String)xAccOffset + " "
 				 + (String)yAccOffset + " " +  (String)zAccOffset);
 	xSampleNew = 0;
-	Serial.println("End: calibrate");
 }
 
 // ================= Hardware Tasks
 
-void getStepCounterReadings(void *p){
-	Serial.println("Begin: getStepCounterReadings");
+void getAccelReadings(void *p){
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-		readStepCounter();
+
+		readAltimu();
+
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(20);
 	}
-	Serial.println("End: getStepCounterReadings");
 }
 
 void getCompassReadings(void *p){
-	Serial.println("Begin: getCompassReadings");
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+
 		readCompass();
+
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(20);
 	}
-	Serial.println("End: getCompassReadings");
 }
 
-void getSensor1Readings(void *p){
-	Serial.println("Begin: getSensor1Readings");
+void getSensorReadings(void *p) {
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+
 		readSensor(0);
-		xSemaphoreGive(xSemaphore);
-		vTaskDelay(20);
-	}
-	Serial.println("End: getSensor1Readings");
-}
-
-void getSensor2Readings(void *p){
-	Serial.println("Begin: getSensor2Readings");
-	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 		readSensor(1);
+		readSensor(2);
+
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(20);
 	}
-	Serial.println("Begin: getSensor2Readings");
 }
 
-void getSensor3Readings(void *p){
-	Serial.println("Begin: getSensor3Readings");
-	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-		readSensor(2);
-		xSemaphoreGive(xSemaphore);
-		vTaskDelay(20);
-	}
-	Serial.println("Begin: getSensor3Readings");
-}
+//void getSensor1Readings(void *p){
+//	for (;;) {
+//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+//		readSensor(0);
+//		xSemaphoreGive(xSemaphore);
+//		vTaskDelay(20);
+//	}
+//}
+//
+//void getSensor2Readings(void *p){
+//	for (;;) {
+//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+//		readSensor(1);
+//		xSemaphoreGive(xSemaphore);
+//		vTaskDelay(20);
+//	}
+//}
+//
+//void getSensor3Readings(void *p){
+//	for (;;) {
+//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+//		readSensor(2);
+//		xSemaphoreGive(xSemaphore);
+//		vTaskDelay(20);
+//	}
+//}
 
 //  ===============================  Firmware Functions  ===============================
 static void initialize() {
@@ -437,8 +441,8 @@ void setup() {
 	xSemaphore = xSemaphoreCreateBinary();
 	xSemaphoreGive(xSemaphore);
 
-	Serial.begin(115200);
-	Serial1.begin(115200);
+	Serial.begin(9600);
+	Serial1.begin(9600);
 
 	//  ===============================  Setup Hardware Connection  ===============================
 	Serial.println("Initializing Hardware!");
@@ -477,11 +481,12 @@ void setup() {
 	calibrate();
 
 	//  ===============================  Create Hardware Tasks  ===============================
-	xTaskCreate(getStepCounterReadings, "getStepCounterReadings", 4*STACK_SIZE, NULL, 1, NULL);
+//	xTaskCreate(getAccelReadings, "getAccelReadings", 6*STACK_SIZE, NULL, 1, NULL); // NOT WORKING; TODO: FIX THIS
 //	xTaskCreate(getCompassReadings, "getCompassReadings", 4*STACK_SIZE, NULL, 1, NULL);
-//	xTaskCreate(getSensor1Readings, "getSensor1Readings", 4*STACK_SIZE, NULL, 2, NULL);
-//	xTaskCreate(getSensor2Readings, "getSensor2Readings", 4*STACK_SIZE, NULL, 2, NULL);
-//	xTaskCreate(getSensor3Readings, "getSensor3Readings", 4*STACK_SIZE, NULL, 2, NULL);
+	xTaskCreate(getSensorReadings, "getSensorReadings", 6*STACK_SIZE, NULL, 2, NULL);
+//	xTaskCreate(getSensor1Readings, "getSensor1Readings", 4*STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings don't work
+//	xTaskCreate(getSensor2Readings, "getSensor2Readings", 4*STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings don't work
+//	xTaskCreate(getSensor3Readings, "getSensor3Readings", 4*STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings don't work
 
 	//  ===============================  Setup Firmware Connection  ===============================
 	Serial.flush();
