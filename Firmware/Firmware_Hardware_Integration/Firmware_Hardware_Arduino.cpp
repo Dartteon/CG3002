@@ -198,7 +198,9 @@ void readAltimu() {
 	}
 	currGyroY = (int) compass.a.y - yAccOffset;
 	currGyroZ = (int) compass.a.z - zAccOffset;
-	Serial.println("Gyro " + (String)newAccX + " " + (String)currGyroY + " " + (String)currGyroZ);
+	Serial.print("GryoX "); Serial.print(newAccX); Serial.print(" ");
+	Serial.print("GryoY "); Serial.print(currGyroY); Serial.print(" ");
+	Serial.print("GryoZ "); Serial.println(currGyroZ);
 }
 
 // Excluding function since software will be handling step counting
@@ -263,17 +265,6 @@ void getAccelReadings(void *p){
 	}
 }
 
-void getCompassReadings(void *p){
-	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-
-		readCompass();
-
-		xSemaphoreGive(xSemaphore);
-		vTaskDelay(20);
-	}
-}
-
 void getSensorReadings(void *p) {
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
@@ -281,6 +272,17 @@ void getSensorReadings(void *p) {
 		readSensor(0);
 		readSensor(1);
 		readSensor(2);
+
+		xSemaphoreGive(xSemaphore);
+		vTaskDelay(20);
+	}
+}
+
+void getCompassReadings(void *p){
+	for (;;) {
+		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+
+		readCompass();
 
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(20);
@@ -481,9 +483,9 @@ void setup() {
 	calibrate();
 
 	//  ===============================  Create Hardware Tasks  ===============================
-//	xTaskCreate(getAccelReadings, "getAccelReadings", 6*STACK_SIZE, NULL, 1, NULL); // NOT WORKING; TODO: FIX THIS
-//	xTaskCreate(getCompassReadings, "getCompassReadings", 4*STACK_SIZE, NULL, 1, NULL);
-	xTaskCreate(getSensorReadings, "getSensorReadings", 6*STACK_SIZE, NULL, 2, NULL);
+	xTaskCreate(getAccelReadings, "getAccelReadings", 6*STACK_SIZE, NULL, 1, NULL);
+//	xTaskCreate(getSensorReadings, "getSensorReadings", 6*STACK_SIZE, NULL, 2, NULL);
+//	xTaskCreate(getCompassReadings, "getCompassReadings", 4*STACK_SIZE, NULL, 1, NULL); // Not using for now
 //	xTaskCreate(getSensor1Readings, "getSensor1Readings", 4*STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings don't work
 //	xTaskCreate(getSensor2Readings, "getSensor2Readings", 4*STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings don't work
 //	xTaskCreate(getSensor3Readings, "getSensor3Readings", 4*STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings don't work
@@ -499,6 +501,8 @@ void setup() {
 	//  ===============================  Create Firmware Tasks  ===============================
 	// xTaskCreate(addStepCountDataDebug, "addStepCountData", STACK_SIZE, NULL, 1, NULL);
 	// xTaskCreate(transmitStepCountData, "transmitStepCountData", STACK_SIZE, NULL, 1, NULL);
+
+	vTaskStartScheduler();
 }
 
 void loop() {
