@@ -40,7 +40,7 @@ int MINIMUM_ACCELERATION_Z = 1500;
 int MINIMUM_STEP_INTERVAL_MILLISECONDS = 800;
 int MINIMUM_ACCELERATION_DELTA = 200; //Crossing below threshold not enough - it must be a decent acceleration change
 int DIST_PER_STEP_CM = 75;
-int PREDIFINED_PRECISION = 550; //minimum delta to shift new value into xSampleNew (xSampleNew)
+int PREDEFINED_PRECISION = 550; //minimum delta to shift new value into xSampleNew (xSampleNew)
 float PERCENTAGE_BELOW_DYNAMIC_THRESHOLD_TRIGGER = .2;  //xAcc must be significantly below threshold, TBI
 //  ==============================================================================
 bool proceed = true;
@@ -207,7 +207,7 @@ void readAltimu() {
   xSampleOld = xSampleNew;  //Compulsory shift in
   int newAccX = (int) compass.a.x - xAccOffset;
   int diff = abs(newAccX - xSampleOld);
-  if (diff >= PREDIFINED_PRECISION) { //delta is significant enough to shift in
+  if (diff >= PREDEFINED_PRECISION) { //delta is significant enough to shift in
 //    xSampleNew = (xFilter[0] + xFilter[1] + xFilter[2] + newAccX)/4.0;  //Averaging over past 3 readings
     xSampleNew = newAccX; //Shift new value into xSampleNew
     xFilter[3] = xFilter[2];
