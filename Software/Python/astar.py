@@ -4,6 +4,7 @@ import pyttsx
 import json 
 import heapq
 import math
+from stepCounter import read_step_counter
 
 # Base URL for map info download
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
@@ -216,6 +217,9 @@ def received_data_from_arduino():
     meanAccelX = mean(dataReceived['accelx'])
     meanAccelY = mean(dataReceived['accely'])
     meanAccelZ = mean(dataReceived['accelz'])
+    meanTime = int(mean(dataReceived['timestamp']))
+    # To implement for loop to handle multiple pieces of data in one packet
+    read_step_counter(meanAccelX, meanAccelZ, meanTime)
     print 'direction: ' + str(direction) + ' acceleration X, Y, Z: ' + str(meanAccelX) + ', ' + str(meanAccelY) + ', ' + str(meanAccelZ)
 
 def direction_for_user(turnAngle):
