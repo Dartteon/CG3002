@@ -1,4 +1,5 @@
 from urllib2 import urlopen
+from Firmware_Dummy import SerialCommunicator
 import pyttsx
 import json 
 import heapq
@@ -8,12 +9,13 @@ import math
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
 # Initialising Text-to-Speech
 engine = pyttsx.init()
+serial = SerialCommunicator()
 
 def main():
     # Integer input mode for fixed list of maps
     # buildingName = int_to_buildingName()
     # floorNumber = int_to_floorNumber(buildingName)
-
+    received_data_from_arduino()
     # Text input mode for new maps
     info = None
     while info is None:
@@ -208,6 +210,14 @@ def path_to_goal(nodeList, route, northAt):
         previousNode = nextNode
     text_to_speech('You have reached the final node')
 
+def received_data_from_arduino():
+    dataReceived = serial.serialRead()
+    direction = mean(dataReceived['dir'])
+    meanAccelX = mean(dataReceived['accelx'])
+    meanAccelY = mean(dataReceived['accely'])
+    meanAccelZ = mean(dataReceived['accelz'])
+    print 'direction: ' + str(direction) + ' acceleration X, Y, Z: ' + str(meanAccelX) + ', ' + str(meanAccelY) + ', ' + str(meanAccelZ)
+
 def direction_for_user(turnAngle):
     # If angle is between -10 and 10 degrees, ignore it and let the user walks straight
     if turnAngle >= -20 and turnAngle <= 20:
@@ -278,5 +288,8 @@ def text_to_speech(text):
 
 def newline():
     print('')
+
+def mean(list):
+    return float(sum(list)) / max(len(list), 1)
 
 main()
