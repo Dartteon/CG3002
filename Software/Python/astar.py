@@ -1,5 +1,6 @@
 from urllib2 import urlopen
-from Firmware_Dummy import SerialCommunicator
+from Firmware_Receiver import SerialCommunicator
+from Firmware_Receiver import Arduino
 import pyttsx
 import json 
 import heapq
@@ -11,11 +12,13 @@ base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s
 # Initialising Text-to-Speech
 engine = pyttsx.init()
 serial = SerialCommunicator()
+arduino = Arduino()
 
 def main():
     # Integer input mode for fixed list of maps
     # buildingName = int_to_buildingName()
     # floorNumber = int_to_floorNumber(buildingName)
+    arduino.handshakeWithArduino()
     received_data_from_arduino()
     # Text input mode for new maps
     info = None
