@@ -125,16 +125,6 @@ void SonarSensor(int trigPin, int echoPin) {
 	proceed = true;
 }
 
-void readCompass() {
-	compass.read();
-	float heading = compass.heading((LSM303::vector<int>) {
-		0, 0, 1
-	});
-	Serial.print("Compass"); Serial.print(" ");
-	Serial.println(heading);
-}
-
-
 void readSensor(int i) {
 	Serial.print("Sensor "); Serial.print(i); Serial.print(" ");
 	switch (i) {
@@ -160,6 +150,20 @@ void readSensor(int i) {
 }
 
 // ================= Accelerometer
+
+// Hardware-Firmware API: Put Data into Firmware Storage
+void addStepCountData(int dir, int accelx, int accely, int accelz,
+		int timestamp) {
+	Serial.println("addStepCountData");
+
+	stepCountStorage.dir[sc_pos_packet] = dir;
+	stepCountStorage.accelx[sc_pos_packet] = accelx;
+	stepCountStorage.accely[sc_pos_packet] = accely;
+	stepCountStorage.accelz[sc_pos_packet] = accelz;
+	stepCountStorage.timestamp[sc_pos_packet] = timestamp;
+
+	sc_pos_packet = (sc_pos_packet + 1) % MAX_STORAGE_SIZE;
+}
 
 void calculateNewXThreshold() {
 	xDynamicThreshold = (xMax + xMin) / 2;
@@ -194,9 +198,16 @@ void readAltimu() {
 	}
 	currGyroY = (int) compass.a.y - yAccOffset;
 	currGyroZ = (int) compass.a.z - zAccOffset;
+
 	Serial.print("GryoX "); Serial.println(newAccX);
 	Serial.print("GryoY "); Serial.println(currGyroY);
 	Serial.print("GryoZ "); Serial.println(currGyroZ);
+
+	int compassReadings = (int)compass.heading((LSM303::vector<int>) {
+		0, 0, 1
+	});
+	int timeMillis = millis();
+	addStepCountData(compassReadings, newAccX, currGyroY, currGyroZ, timeMillis);
 }
 
 void calibrate() {
@@ -264,17 +275,18 @@ void getSensor3Readings(void *p){
 	}
 }
 
-//void getCompassReadings(void *p){
-//	for (;;) {
-//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-//
-//		readCompass();
-//
-//		xSemaphoreGive(xSemaphore);
-//		vTaskDelay(20);
-//	}
-//}
+void getSensorReadings(void *p){
+	for (;;) {
+		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
+		readSensor(0);
+		readSensor(1);
+		readSensor(2);
+
+		xSemaphoreGive(xSemaphore);
+		vTaskDelay(25);
+	}
+}
 
 //  ===============================  Firmware Functions  ===============================
 static void initialize() {
@@ -319,23 +331,8 @@ void addStepCountDataDebug(void *p) {
 		sc_pos_packet = (sc_pos_packet + 1) % MAX_STORAGE_SIZE;
 
 		xSemaphoreGive(xSemaphore);
-		vTaskDelay(20);
+		vTaskDelay(1);
 	}
-}
-
-// Hardware API: Put Data into Firmware Storage
-// TODO: Integrate with Hardware
-void addStepCountData(int dir, int accelx, int accely, int accelz,
-		int timestamp) {
-	Serial.println("addStepCountData");
-
-	stepCountStorage.dir[sc_pos_packet] = dir;
-	stepCountStorage.accelx[sc_pos_packet] = accelx;
-	stepCountStorage.accely[sc_pos_packet] = accely;
-	stepCountStorage.accelz[sc_pos_packet] = accelz;
-	stepCountStorage.timestamp[sc_pos_packet] = timestamp;
-
-	sc_pos_packet = (sc_pos_packet + 1) % MAX_STORAGE_SIZE;
 }
 
 // TODO: Integrate with Hardware
@@ -368,14 +365,16 @@ void transmitStepCountData(void *p) {
 
 		json["checksum"] = checksum;
 
-		//might fuck up
+		// Might have issues if transmit is at higher priority
+		// than getReadings.
 		while(!Serial1){
 
 		}
 
 		json.printTo(Serial1);
 
-		//might fuck up
+		// Might have issues if transmit is at higher priority
+				// than getReadings.
 		while (!(Serial1 && Serial1.available())){
 
 		}
@@ -393,7 +392,7 @@ void transmitStepCountData(void *p) {
 		}
 
 		xSemaphoreGive(xSemaphore);
-		vTaskDelay(100);
+		vTaskDelay(25);
 	}
 }
 
@@ -444,22 +443,22 @@ void setup() {
 
 	//  ===============================  Create Hardware Tasks  ===============================
 	xTaskCreate(getAccelReadings, "getAccelReadings", STACK_SIZE, NULL, 1, NULL);
-	xTaskCreate(getSensor1Readings, "getSensor1Readings", STACK_SIZE, NULL, 2, NULL);
-	xTaskCreate(getSensor2Readings, "getSensor2Readings", STACK_SIZE, NULL, 2, NULL);
-	xTaskCreate(getSensor3Readings, "getSensor3Readings", STACK_SIZE, NULL, 2, NULL);
-//	xTaskCreate(getCompassReadings, "getCompassReadings", STACK_SIZE, NULL, 1, NULL); // Not using for now
+	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 1, NULL);
+//	xTaskCreate(getSensor1Readings, "getSensor1Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
+//	xTaskCreate(getSensor2Readings, "getSensor2Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
+//	xTaskCreate(getSensor3Readings, "getSensor3Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 
 	//  ===============================  Setup Firmware Connection  ===============================
 	Serial.flush();
-	// Serial1.flush();
+	Serial1.flush();
 
-	// Serial.println("Begin Arduino-Pi Connection");
-	// initialize();
-	// Serial.println("Connection Established. Sending data from Arduino to Pi.");
+	Serial.println("Begin Arduino-Pi Connection");
+	initialize();
+	Serial.println("Connection Established. Sending data from Arduino to Pi.");
 
 	//  ===============================  Create Firmware Tasks  ===============================
-	// xTaskCreate(addStepCountDataDebug, "addStepCountData", STACK_SIZE, NULL, 1, NULL);
-	// xTaskCreate(transmitStepCountData, "transmitStepCountData", STACK_SIZE, NULL, 1, NULL);
+//	xTaskCreate(addStepCountDataDebug, "addStepCountData", STACK_SIZE, NULL, 1, NULL); // Debugging Purpose
+	xTaskCreate(transmitStepCountData, "transmitStepCountData", STACK_SIZE, NULL, 2, NULL); // Keep Transmit at Lower Priority than Sensor Readings
 
 	vTaskStartScheduler();
 }
