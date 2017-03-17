@@ -67,12 +67,12 @@ int dir_value = 0;
 int accelx_value = 0;
 int accely_value = 0;
 int accelz_value = 0;
-int sc_timestamp_value = 0;
+long sc_timestamp_value = 0;
 
 int dist1_value = 0;
 int dist2_value = 0;
 int dist3_value = 0;
-int od_timestamp_value = 0;
+long od_timestamp_value = 0;
 
 //  ============================  Firmware Variables ============================
 #define STACK_SIZE 1024
@@ -84,14 +84,14 @@ typedef struct stepCountStorageStrt {
 	int accelx[MAX_STORAGE_SIZE];
 	int accely[MAX_STORAGE_SIZE];
 	int accelz[MAX_STORAGE_SIZE];
-	int timestamp[MAX_STORAGE_SIZE];
+	long timestamp[MAX_STORAGE_SIZE];
 } StepCountStorage;
 
 typedef struct obstDetectionStrt {
-	int dist1[MAX_STORAGE_SIZE];; // Distance from Sensor 1 (Left Arm)
-	int dist2[MAX_STORAGE_SIZE];; // Distance from Sensor 2 (Wand)
-	int dist3[MAX_STORAGE_SIZE];; // Distance from Sensor 3 (Right Arm)
-	int timestamp[MAX_STORAGE_SIZE];;
+	int dist1[MAX_STORAGE_SIZE]; // Distance from Sensor 1 (Left Arm)
+	int dist2[MAX_STORAGE_SIZE]; // Distance from Sensor 2 (Wand)
+	int dist3[MAX_STORAGE_SIZE]; // Distance from Sensor 3 (Right Arm)
+	long timestamp[MAX_STORAGE_SIZE];
 } ObstDetectionStorage;
 
 StepCountStorage stepCountStorage;
@@ -153,7 +153,7 @@ void readSensor(int i) {
 
 // Hardware-Firmware API: Put Data into Firmware Storage
 void addStepCountData(int dir, int accelx, int accely, int accelz,
-		int timestamp) {
+		long timestamp) {
 	Serial.println("addStepCountData");
 
 	stepCountStorage.dir[sc_pos_packet] = dir;
@@ -206,7 +206,8 @@ void readAltimu() {
 	int compassReadings = (int)compass.heading((LSM303::vector<int>) {
 		0, 0, 1
 	});
-	int timeMillis = millis();
+	long timeMillis = millis();
+//	long dummyTimestamp = 0;
 	addStepCountData(compassReadings, newAccX, currGyroY, currGyroZ, timeMillis);
 }
 
@@ -351,7 +352,7 @@ void transmitStepCountData(void *p) {
 		JsonArray& accely = json.createNestedArray("accely");
 		JsonArray& accelz = json.createNestedArray("accelz");
 		JsonArray& timestamp = json.createNestedArray("timestamp");
-		int checksum = 0;
+		long checksum = 0;
 
 		for (i = 0; (sc_pos_json != sc_pos_packet) && (i < MAX_SENDING_PACKET_SIZE); i++) {
 			dir.add(stepCountStorage.dir[sc_pos_json]);
