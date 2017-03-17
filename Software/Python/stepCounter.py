@@ -35,13 +35,16 @@ def read_step_counter(x, z, timestamp):
   	# if (xAccDelta <= MINIMUM_ACCELERATION_DELTA) return;
   	if xAccDelta < MINIMUM_ACCELERATION_DELTA: 
   		print('below minimum acceleration delta')
-  		return  #Check that walker has accelerated significantly
+  		response['stepTaken'] = 0
+		return response  #Check that walker has accelerated significantly
   	if timeDiff < MINIMUM_STEP_INTERVAL_MILLISECONDS: 
   		# print('below minimum step interval')
-  		return #Check that steps arent double counted
+  		response['stepTaken'] = 0
+		return response #Check that steps arent double counted
   	if z < MINIMUM_ACCELERATION_Z:
   		print('below minimum acceleration z')
-  		return #Check that walker is accelerating forward
+  		response['stepTaken'] = 0
+		return response #Check that walker is accelerating forward
   	# xSamples[currSampleCount] = xSampleNew; //Not needed anymore, removal TBI
 
 	if timeDiff >= MINIMUM_STEP_INTERVAL_MILLISECONDS:
@@ -50,11 +53,17 @@ def read_step_counter(x, z, timestamp):
 			numStepsTaken += 1
 			totalDist = DIST_PER_STEP_CM * numStepsTaken
 			print("Step taken! Total steps - " + str(numStepsTaken) + " ---- AccZ = " + str(z) + " total distance = " + str(totalDist))
+			response['stepTaken'] = 1
+			return response
 		else:
 			print('greater than dynamic threshold')
 			# Serial.println("Step detected but not within interval threshold");
+			response['stepTaken'] = 0
+			return response
 	else:
 		print('greater than step interval')
+		response['stepTaken'] = 0
+		return response
 
 def incrementSampleCount(currSampleCount, xMax, xMin):
 	if currSampleCount >= NUM_SAMPLE_COUNTS_TO_RECALCULATE_THRESHOLD - 1:
