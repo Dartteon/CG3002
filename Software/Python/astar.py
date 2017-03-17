@@ -19,7 +19,6 @@ def main():
     # buildingName = int_to_buildingName()
     # floorNumber = int_to_floorNumber(buildingName)
     arduino.handshakeWithArduino()
-    received_data_from_arduino()
     # Text input mode for new maps
     info = None
     while info is None:
@@ -136,9 +135,19 @@ class NODE:
         
 def get_json(buildingName, floorNumber):
     '''Returns map data from building name and floor number'''
-    url = base_url % (buildingName, floorNumber)
-    response = urlopen(url)
-    data = json.loads(response.read())
+    try:
+        fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
+        with open(fileName, 'r') as file:
+            data = json.load(file)
+    except Exception as e:
+        url = base_url % (buildingName, floorNumber)
+        response = urlopen(url)
+        data = json.loads(response.read())
+        info = data['info']
+        if info is not None:
+            fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
+            with open(fileName, 'w') as file:
+                json.dump(data, file)
     return data
 
 def heuristic(goalNode, nodeList):
@@ -203,6 +212,7 @@ def path_to_goal(nodeList, route, northAt):
 
             print instruction
             text_to_speech(instruction)
+            received_data_from_arduino(position)
 
             position['x'] = int(raw_input('Current x: '))
             position['y'] = int(raw_input('Current y: '))
@@ -214,7 +224,7 @@ def path_to_goal(nodeList, route, northAt):
         previousNode = nextNode
     text_to_speech('You have reached the final node')
 
-def received_data_from_arduino():
+def received_data_from_arduino(position):
     dataReceived = serial.serialRead()
     direction = mean(dataReceived['dir'])
     meanAccelX = mean(dataReceived['accelx'])
@@ -222,7 +232,14 @@ def received_data_from_arduino():
     meanAccelZ = mean(dataReceived['accelz'])
     meanTime = int(mean(dataReceived['timestamp']))
     # To implement for loop to handle multiple pieces of data in one packet
-    read_step_counter(meanAccelX, meanAccelZ, meanTime)
+    for value in dataReceived['dir']:
+    for i in range(len(my_list)):
+        response =  read_step_counter(dataReceived['accelx'][i], dataReceived['accelz'][i], dataReceived['timestamp'])
+        if response['status'] == 1: # Step taken
+            position['x'] += 75 * (math.sin(math.radians(int(dataReceived['dir']))))
+            position['y'] += 75 * (math.cos(math.radians(int(dataReceived['dir']))))
+        position['heading'] = int(dataReceived['dir'])
+
     print 'direction: ' + str(direction) + ' acceleration X, Y, Z: ' + str(meanAccelX) + ', ' + str(meanAccelY) + ', ' + str(meanAccelZ)
 
 def direction_for_user(turnAngle):
