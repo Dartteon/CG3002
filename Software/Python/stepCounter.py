@@ -20,10 +20,11 @@ numStepsTaken = 0
 currGyroZ = 0
 currGyroY = 0
 timestamp = 0
+prevSample = 0
+instructionTimeStamp = 0
 
-def read_step_counter(x, z, timestamp):
-	prevSample = 0
-	global lastStepTime, numStepsTaken, xMax, xMin
+def read_step_counter(x, z, timestamp):	
+	global lastStepTime, numStepsTaken, xMax, xMin, prevSample, instructionTimeStamp
 	if x > xMax: xMax = x
 	if x < xMin: xMin = x
   	incrementSampleCount(currSampleCount, xMax, xMin)
@@ -31,6 +32,11 @@ def read_step_counter(x, z, timestamp):
   	prevSample = x
 	currTime = timestamp
 	timeDiff = timestamp - lastStepTime
+	if timestamp - instructionTimeStamp > 10000 :
+		instructionTimeStamp = timestamp
+		response['instruction'] = 1
+	else:
+		response['instruction'] = 0
 
   	# if (xAccDelta <= MINIMUM_ACCELERATION_DELTA) return;
   	if xAccDelta < MINIMUM_ACCELERATION_DELTA: 
