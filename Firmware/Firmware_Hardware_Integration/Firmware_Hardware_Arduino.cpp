@@ -46,8 +46,9 @@ int DIST_THRESHOLD_MID = 50;
 int DURATION_TIMEOUT_SENSOR = 3000;
 
 // Step Counter
-int xSampleNew, currGyroY, currGyroZ;
-int xFilter[4] = { 0 };
+int xSampleNew, currAccY, currAccZ;
+int xAccHistory[4] = { 0 };
+int yAccHistory[4] = { 0 };
 int xSamples[50] = { 0 };
 int xDynamicThreshold = 0;
 int xSampleOld = 0;
@@ -56,6 +57,9 @@ int currSampleCount = 0;
 int xMin = 0, xMax = 0;
 unsigned long lastStepTime;
 int numStepsTaken = 0;
+
+volatile int lastKnownDirection;
+volatile float lastDistanceTaken;
 
 int NUM_SAMPLE_COUNTS_TO_RECALCULATE_THRESHOLD = 50;
 int MINIMUM_ACCELERATION_Z = 1500;
@@ -206,47 +210,53 @@ void readAltimu() {
 	compass.read();
 	xSampleOld = xSampleNew;  //Compulsory shift in
 	int newAccX = (int) compass.a.x - xAccOffset;
-	int diff = abs(newAccX - xSampleOld);
-	if (diff >= PREDIFINED_PRECISION) { //delta is significant enough to shift in
-//	    xSampleNew = (xFilter[0] + xFilter[1] + xFilter[2] + newAccX)/4.0;  //Averaging over past 3 readings
+	int xAccDiff = abs(newAccX - xSampleOld);
+	if (xAccDiff >= PREDIFINED_PRECISION) { //delta is significant enough to shift in
+//	    xSampleNew = (xAccHistory[0] + xAccHistory[1] + xAccHistory[2] + newAccX)/4.0;  //Averaging over past 3 readings
 		xSampleNew = newAccX; //Shift new value into xSampleNew
-		xFilter[3] = xFilter[2];
-		xFilter[2] = xFilter[1];
-		xFilter[1] = xFilter[0];
-		xFilter[0] = xSampleNew;
+		xAccHistory[3] = xAccHistory[2];
+		xAccHistory[2] = xAccHistory[1];
+		xAccHistory[1] = xAccHistory[0];
+		xAccHistory[0] = xSampleNew;
 		if (newAccX > xMax) xMax = newAccX;
 		if (newAccX < xMin) xMin = newAccX;
 		incrementSampleCount();
 	}
-	currGyroY = (int) compass.a.y - yAccOffset;
-	currGyroZ = (int) compass.a.z - zAccOffset;
+	currAccY = (int) compass.a.y - yAccOffset;
+	
+	//Record zAcceleration values
+	currAccZ = (int) compass.a.z - zAccOffset;
+	zAccHistory[3] = zAccHistory[2];
+	zAccHistory[2] = zAccHistory[1];
+	zAccHistory[1] = zAccHistory[0];
+	zAccHistory[0] = currAccZ;
 
-	Serial.print("GryoX "); Serial.println(newAccX);
-	Serial.print("GryoY "); Serial.println(currGyroY);
-	Serial.print("GryoZ "); Serial.println(currGyroZ);
+	Serial.print("AccX "); Serial.println(newAccX);
+	Serial.print("AccY "); Serial.println(currAccY);
+	Serial.print("AccZ "); Serial.println(currAccZ);
 
-	int compassReadings = (int)compass.heading((LSM303::vector<int>) {
+	lastKnownDirection = (int)compass.heading((LSM303::vector<int>) {
 		0, 0, 1
 	});
-	long timeMillis = millis();
-//	long dummyTimestamp = 0;
-	addStepCountData(compassReadings, newAccX, currGyroY, currGyroZ, timeMillis);
+//	long timeMillis = millis();
+//	addStepCountData(compassReadings, newAccX, currAccY, currAccZ, timeMillis);
 }
 
 void calibrate() {
 	int NUM_SAMPLES = 128;
-	long xGyroSum = 0;
-	long yGyroSum = 0;
-	long zGyroSum = 0;
+	long xAccSum = 0;
+	long yAccSum = 0;
+	long zAccSum = 0;
 	for (int i = 0; i < NUM_SAMPLES; i++) {
 		compass.read();
-		xGyroSum += compass.a.x;
-		yGyroSum += compass.a.y;
-		zGyroSum += compass.a.z;
+		xAccSum += compass.a.x;
+		yAccSum += compass.a.y;
+		zAccSum += compass.a.z;
+		delay(10);	//###Lengthen the sampling time
 	}
-	xAccOffset = xGyroSum / NUM_SAMPLES;
-	yAccOffset = yGyroSum / NUM_SAMPLES;
-	zAccOffset = zGyroSum / NUM_SAMPLES;
+	xAccOffset = xAccSum / NUM_SAMPLES;
+	yAccOffset = yAccSum / NUM_SAMPLES;
+	zAccOffset = zAccSum / NUM_SAMPLES;
 	Serial.println("Calibrated " + (String)xAccOffset + " "
 				 + (String)yAccOffset + " " +  (String)zAccOffset);
 	xSampleNew = 0;
@@ -258,8 +268,35 @@ void getAccelReadings(void *p){
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
+		int prevSample = xSampleNew; //Get previous reading
 		readAltimu();
+		
+		//Now check if step is taken
+		float distanceTaken = 0;
+		int xAccDelta = abs(prevSample - xSampleNew);  
+		unsigned long currTime = millis();
+		unsigned long timeDiff = currTime - lastStepTime;
+		//if (xAccDelta <= MINIMUM_ACCELERATION_DELTA) return;
+		if (xAccDelta < MINIMUM_ACCELERATION_DELTA) return;  //Check that walker has accelerated significantly
+		if (timeDiff < MINIMUM_STEP_INTERVAL_MILLISECONDS) return; //Check that steps arent double counted
+		if (currAccZ < MINIMUM_ACCELERATION_Z) return; //Check that walker is accelerating forward
+		//xSamples[currSampleCount] = xSampleNew; //Not needed anymore, removal TBI
 
+		if (timeDiff >= MINIMUM_STEP_INTERVAL_MILLISECONDS) {
+			if (xSampleNew < xDynamicThreshold) {
+			  lastStepTime = currTime;
+			  numStepsTaken++;
+			  int totalDist = DIST_PER_STEP_CM * numStepsTaken;
+			  distanceTaken += DIST_PER_STEP_CM;
+			  Serial.print("Step taken! Total steps - " + (String)numStepsTaken + " ---- AccZ = ");
+			  Serial.print(currAccZ);
+			  Serial.println(" ");
+			}
+		} else {
+		//      Serial.println("Step detected but not within interval threshold");
+		}
+		
+		lastDistanceTaken += distanceTaken;
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(1);
 	}
@@ -370,8 +407,13 @@ void transmitStepCountData(void *p) {
 		Serial.println("transmitStepCountData");
 
 		StaticJsonBuffer<512> jsonBuffer;
-		JsonObject& json = jsonBuffer.createObject();
-		JsonArray& dir = json.createNestedArray("dir");
+ 		JsonObject& json = jsonBuffer.createObject();
+		json["direction"] = lastKnownDirection;
+		json["distance"] = totalDist;
+		long checksum = totalDist % 256;	//### Must make rPi recompute checksum too
+		json["checksum"] = checksum;
+		
+/*		JsonArray& dir = json.createNestedArray("dir");
 		JsonArray& accelx = json.createNestedArray("accelx");
 		JsonArray& accely = json.createNestedArray("accely");
 		JsonArray& accelz = json.createNestedArray("accelz");
@@ -386,9 +428,8 @@ void transmitStepCountData(void *p) {
 			timestamp.add(stepCountStorage.timestamp[sc_pos_json]);
 			checksum = (checksum + stepCountStorage.timestamp[sc_pos_json]) %256;
 			sc_pos_json = (sc_pos_json + 1) % MAX_STORAGE_SIZE;
-		}
+		} */
 
-		json["checksum"] = checksum;
 
 		// Might have issues if transmit is at higher priority
 		// than getReadings.
@@ -407,13 +448,13 @@ void transmitStepCountData(void *p) {
 		if (Serial1.available()){
 			char msg = Serial1.read();
 			if (msg =='n'){
-				sc_pos_json = sc_pos_backup;
+				//sc_pos_json = sc_pos_backup;
 			}
 			Serial.println(msg);
 		}
 		else {
 			Serial.println("error");
-			sc_pos_json = sc_pos_backup;
+			//sc_pos_json = sc_pos_backup;
 		}
 
 		xSemaphoreGive(xSemaphore);
