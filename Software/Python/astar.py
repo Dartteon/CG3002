@@ -209,14 +209,15 @@ def path_to_goal(nodeList, route, northAt):
         while displacement['distance'] > 20:
             direction = direction_for_user(displacement['turnAngle'])
             instruction = instruction_for_user(direction, displacement['distance'], nextNode.nodeId)
-
+            readInstruction = received_data_from_arduino(position)
             print instruction
-            text_to_speech(instruction)
-            received_data_from_arduino(position)
+            if instruction == 1:
+                text_to_speech(instruction)
+            
 
-            position['x'] = int(raw_input('Current x: '))
-            position['y'] = int(raw_input('Current y: '))
-            position['heading'] = int(raw_input('Current heading: '))
+            # position['x'] = int(raw_input('Current x: '))
+            # position['y'] = int(raw_input('Current y: '))
+            # position['heading'] = int(raw_input('Current heading: '))
             displacement = displacement_from_position(position, nextNode, northAt)
         reached_message = 'You have reached node ID ' + str(nextNode.nodeId)
         print reached_message
@@ -234,13 +235,14 @@ def received_data_from_arduino(position):
     # To implement for loop to handle multiple pieces of data in one packet
     for value in dataReceived['dir']:
     for i in range(len(my_list)):
-        response =  read_step_counter(dataReceived['accelx'][i], dataReceived['accelz'][i], dataReceived['timestamp'])
+        response =  read_step_counter(dataReceived['accelx'][i], dataReceived['accelz'][i], long(dataReceived['timestamp']))
         if response['status'] == 1: # Step taken
             position['x'] += 75 * (math.sin(math.radians(int(dataReceived['dir']))))
             position['y'] += 75 * (math.cos(math.radians(int(dataReceived['dir']))))
         position['heading'] = int(dataReceived['dir'])
 
     print 'direction: ' + str(direction) + ' acceleration X, Y, Z: ' + str(meanAccelX) + ', ' + str(meanAccelY) + ', ' + str(meanAccelZ)
+    return response['instruction']
 
 def direction_for_user(turnAngle):
     # If angle is between -10 and 10 degrees, ignore it and let the user walks straight
