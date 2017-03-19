@@ -18,7 +18,6 @@ def main():
     # Integer input mode for fixed list of maps
     # buildingName = int_to_buildingName()
     # floorNumber = int_to_floorNumber(buildingName)
-    arduino.handshakeWithArduino()
     # Text input mode for new maps
     info = None
     while info is None:
@@ -217,6 +216,7 @@ def path_to_goal(nodeList, route, northAt):
         while displacement['distance'] > 20:
             direction = direction_for_user(displacement['turnAngle'])
             instruction = instruction_for_user(direction, displacement['distance'], nextNode.nodeId)
+            arduino.handshakeWithArduino()
             readInstruction = received_data_from_arduino(position)
             print instruction
             if instruction == 1:
@@ -241,8 +241,9 @@ def received_data_from_arduino(position):
     meanAccelZ = mean(dataReceived['accelz'])
     meanTime = int(mean(dataReceived['timestamp']))
     # To implement for loop to handle multiple pieces of data in one packet
-    for value in dataReceived['dir']:
-    for i in range(len(my_list)):
+    # for value in dataReceived['dir']:
+    response = {}
+    for i in range(len(dataReceived['dir'])):
         response =  read_step_counter(dataReceived['accelx'][i], dataReceived['accelz'][i], long(dataReceived['timestamp']))
         if response['status'] == 1: # Step taken
             position['x'] += 75 * (math.sin(math.radians(int(dataReceived['dir']))))
