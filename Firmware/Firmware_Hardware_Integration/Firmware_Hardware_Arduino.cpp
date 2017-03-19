@@ -15,22 +15,32 @@ L3G gyro;
 
 //  ============================  Hardware Variables ============================
 // Ultrasound Sensors
-// Left
-#define trigPin1 45
-#define echoPin1 44
-#define motorPin1 47
+// Left Arm
+#define trigPin1 26
+#define echoPin1 27
+#define motorPin1 28
 
-// Mid
+// Mid Arm
 #define trigPin2 49
 #define echoPin2 48
 #define motorPin2 51
 
-// Right
-#define trigPin3 26
-#define echoPin3 27
-#define motorPin3 28
+// Right Arm
+#define trigPin3 32
+#define echoPin3 34
+#define motorPin3 35
 
-long duration, distance, RightSensor, BackSensor, FrontSensor, LeftSensor;
+//Left Leg
+#define trigPin4 40
+#define echoPin4 41
+#define motorPin4 43
+
+//Right Leg
+#define trigPin5 45
+#define echoPin5 44
+#define motorPin5 47
+
+long duration, distance, rightArmSensor, frontSensor, leftArmSensor, leftLegSensor, rightLegSensor;
 int DIST_THRESHOLD_SIDES = 50;
 int DIST_THRESHOLD_MID = 50;
 int DURATION_TIMEOUT_SENSOR = 3000;
@@ -130,21 +140,33 @@ void readSensor(int i) {
 	switch (i) {
 		case 0:
 			SonarSensor(trigPin1, echoPin1);
-			LeftSensor = distance;
-			digitalWrite(motorPin1, (LeftSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-			Serial.println(LeftSensor);
+			leftArmSensor = distance;
+			digitalWrite(motorPin1, (leftArmSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
+			Serial.println(leftArmSensor);
 			break;
 		case 1:
 			SonarSensor(trigPin2, echoPin2);
-			FrontSensor = distance;
-			digitalWrite(motorPin2, (FrontSensor <= DIST_THRESHOLD_MID) ? HIGH : LOW);
-			Serial.println(FrontSensor);
+			frontSensor = distance;
+			digitalWrite(motorPin2, (frontSensor <= DIST_THRESHOLD_MID) ? HIGH : LOW);
+			Serial.println(frontSensor);
 			break;
 		case 2:
 			SonarSensor(trigPin3, echoPin3);
-			RightSensor = distance;
-			digitalWrite(motorPin3, (RightSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-			Serial.println(RightSensor);
+			rightArmSensor = distance;
+			digitalWrite(motorPin3, (rightArmSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
+			Serial.println(rightArmSensor);
+			break;
+		case 3:
+			SonarSensor(trigPin4, echoPin4);
+			leftLegSensor = distance;
+			digitalWrite(motorPin4, (leftLegSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
+			Serial.println(leftLegSensor);
+			break;
+		case 4:
+			SonarSensor(trigPin5, echoPin5);
+			rightLegSensor = distance;
+			digitalWrite(motorPin5, (rightLegSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
+			Serial.println(rightLegSensor);
 			break;
 	}
 }
@@ -283,6 +305,8 @@ void getSensorReadings(void *p){
 		readSensor(0);
 		readSensor(1);
 		readSensor(2);
+		readSensor(3);
+		readSensor(4);
 
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(25);
@@ -414,9 +438,16 @@ void setup() {
 	pinMode(echoPin2, INPUT);
 	pinMode(trigPin3, OUTPUT);
 	pinMode(echoPin3, INPUT);
+	pinMode(trigPin4, OUTPUT);
+	pinMode(echoPin4, INPUT);
+	pinMode(trigPin5, OUTPUT);
+	pinMode(echoPin5, INPUT);
+
 	pinMode(motorPin1, OUTPUT);
 	pinMode(motorPin2, OUTPUT);
 	pinMode(motorPin3, OUTPUT);
+	pinMode(motorPin4, OUTPUT);
+	pinMode(motorPin5, OUTPUT);
 
 
 	// Compass
