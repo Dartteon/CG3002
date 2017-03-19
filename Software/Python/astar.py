@@ -43,9 +43,17 @@ def main():
     print 'Name of the first node at ' + buildingName + ' Floor ' + str(floorNumber) + ' is ' + nodeList[0].nodeName
     print buildingName + ' Floor ' + str(floorNumber) + ' has node IDs from 1 to ' + str(len(nodeList))
     print 'North is at ' + info['northAt'] + ' degrees'
-    startNode = nodeList[int(raw_input('Start node ID: '))-1]
-    goalNode = nodeList[int(raw_input('Goal node ID: '))-1]
-    newline()
+    while True:
+        try:
+            startNode = nodeList[int(raw_input('Start node ID: '))-1]
+            goalNode = nodeList[int(raw_input('Goal node ID: '))-1]
+        except IndexError:
+            print('One or more node IDs are out of range')
+            newline()
+            pass
+        else:
+            break
+
 
     hList = heuristic(goalNode, nodeList)
 
