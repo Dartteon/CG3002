@@ -327,4 +327,5 @@ def newline():
 def mean(list):
     return float(sum(list)) / max(len(list), 1)
 
+text_to_speech('R pi started and program initialising')
 main()
