@@ -41,7 +41,7 @@ class SerialCommunicator():
                 print(readings)
                 msg = 'n'
                 try:
-                    json0 = json.loads(readings)
+                    jsonO = json.loads(readings)
                     checksumPi = (jsonO['direction'] + int(jsonO['distance'])) % 256
                     for data in jsonO['timestamp']:
                         checksumPi = (checksumPi + data) % 256
@@ -53,7 +53,7 @@ class SerialCommunicator():
                 except:
                     print('Error reading')
                 serial1.write(msg)
-                return json0
+                return jsonO
             #timeout, from reset
             print('Timeout')
             arduino = Arduino()
