@@ -55,6 +55,7 @@ volatile int xSamples[50] = { 0 };
 volatile int xDynamicThreshold = 0;
 volatile int xSampleOld = 0;
 int xAccOffset, yAccOffset, zAccOffset;
+long magnitudeAccOffset;
 volatile int currSampleCount = 0;
 volatile int xMin = 0, xMax = 0;
 unsigned long lastStepTime;
@@ -65,10 +66,10 @@ volatile int lastKnownDirection;
 volatile float lastDistanceTaken;
 
 int NUM_SAMPLE_COUNTS_TO_RECALCULATE_THRESHOLD = 50;
-int MINIMUM_ACCELERATION_MAGNITUDE = 8500;
+int MINIMUM_ACCELERATION_MAGNITUDE = 5000;
 int MINIMUM_STEP_INTERVAL_MILLISECONDS = 800;
 int MINIMUM_ACCELERATION_DELTA = 200; //Crossing below threshold not enough - it must be a decent acceleration change
-int DIST_PER_STEP_CM = 75;
+int DIST_PER_STEP_CM = 60;
 int PREDIFINED_PRECISION = 250; //minimum delta to shift new value into xSampleNew (xSampleNew)
 float PERCENTAGE_BELOW_DYNAMIC_THRESHOLD_TRIGGER = .2; //xAcc must be significantly below threshold, TBI
 //  ==============================================================================
@@ -148,44 +149,44 @@ void SonarSensor(int trigPin, int echoPin) {
 }
 
 void readSensor(int i) {
-	Serial.print("Sensor ");
-	Serial.print(i);
-	Serial.print(" ");
+//	Serial.print("Sensor ");
+//	Serial.print(i);
+//	Serial.print(" ");
 	switch (i) {
 	case 0:
 		SonarSensor(trigPin1, echoPin1);
 		leftArmSensor = distance;
 		digitalWrite(motorPin1,
 				(leftArmSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-		Serial.println(leftArmSensor);
+//		Serial.println(leftArmSensor);
 		break;
 	case 1:
 		SonarSensor(trigPin2, echoPin2);
 		frontSensor = distance;
 		digitalWrite(motorPin2,
 				(frontSensor <= DIST_THRESHOLD_MID) ? HIGH : LOW);
-		Serial.println(frontSensor);
+//		Serial.println(frontSensor);
 		break;
 	case 2:
 		SonarSensor(trigPin3, echoPin3);
 		rightArmSensor = distance;
 		digitalWrite(motorPin3,
 				(rightArmSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-		Serial.println(rightArmSensor);
+//		Serial.println(rightArmSensor);
 		break;
 	case 3:
 		SonarSensor(trigPin4, echoPin4);
 		leftLegSensor = distance;
 		digitalWrite(motorPin4,
 				(leftLegSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-		Serial.println(leftLegSensor);
+//		Serial.println(leftLegSensor);
 		break;
 	case 4:
 		SonarSensor(trigPin5, echoPin5);
 		rightLegSensor = distance;
 		digitalWrite(motorPin5,
 				(rightLegSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-		Serial.println(rightLegSensor);
+//			Serial.println(rightLegSensor);
 		break;
 	}
 }
@@ -238,10 +239,10 @@ void readAltimu() {
 	newAccY -= yAccOffset;
 	newAccZ -= zAccOffset;
 
-	int accDueToGravity = 9810;
+//	int accDueToGravity = 9810;
 //	Serial.print("X "); Serial.print(newAccX); Serial.print(" --- Y "); Serial.print(newAccY); Serial.print(" --- Z "); Serial.println(newAccZ);
 	lastKnownMagnitude = (long) sqrt((xSquare) + (ySquare) + (zSquare))
-			- accDueToGravity;
+			- magnitudeAccOffset;
 //	Serial.print("LastKnownMag "); Serial.println(lastKnownMagnitude);
 
 	int xAccDiff = abs(newAccX - xSampleOld);
@@ -293,9 +294,18 @@ void calibrate() {
 	xAccOffset = xAccSum / NUM_SAMPLES;
 	yAccOffset = yAccSum / NUM_SAMPLES;
 	zAccOffset = zAccSum / NUM_SAMPLES;
+
+
+	long xSquare = (long) xAccOffset * (long) xAccOffset;
+	long ySquare = (long) yAccOffset * (long) yAccOffset;
+	long zSquare = (long) zAccOffset * (long) zAccOffset;
+
+	magnitudeAccOffset = sqrt(xSquare + ySquare + zSquare);
 	Serial.println(
 			"Calibrated " + (String) xAccOffset + " " + (String) yAccOffset
 					+ " " + (String) zAccOffset);
+	Serial.println("MagOffset " + (String)magnitudeAccOffset);
+
 	xSampleNew = 0;
 }
 
