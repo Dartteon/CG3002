@@ -6,6 +6,7 @@ import json
 import heapq
 import math
 from stepCounter import read_step_counter
+import time
 
 # Base URL for map info download
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
@@ -205,53 +206,89 @@ def displacement_from_position(position, node, northAt):
 
 def path_to_goal(nodeList, route, northAt):
     index = 0
+    totalDistance = 0
+    totalNodeDistance = 0
     previousNode = nodeList[route[index]-1]
     goalNode = nodeList[route[len(route)-1]-1]
     position = {'x':nodeList[route[index]-1].x, 'y':nodeList[route[index]-1].y, 'heading':0}
+    arduino.handshakeWithArduino()
+    instructionTimeStamp = 0.0
     while previousNode is not goalNode:
         index += 1
         nextNode = nodeList[route[index]-1]
-        displacement = displacement_from_position(position, nextNode, northAt)
+        # displacement = displacement_from_position(position, nextNode, northAt)
+        nodeToNode = path_to_node(nextNode, previousNode, northAt)
         # If the user is within 20cm to the next node, we will take it as they have reached that node
-        while displacement['distance'] > 20:
-            direction = direction_for_user(displacement['turnAngle'])
-            instruction = instruction_for_user(direction, displacement['distance'], nextNode.nodeId)
-            arduino.handshakeWithArduino()
-            readInstruction = received_data_from_arduino(position)
-            print instruction
-            if instruction == 1:
+        
+        # while distanceToNode['distance'] > 20:
+        while True:
+            data = received_data_from_arduino(position)
+            nodeToNode['distance']
+            nodeToNode['nodeBearing']
+            data['distance']
+            data['direction']
+            distanceToNode = nodeToNode['distance'] - (data['distance'] - totalNodeDistance)
+            turnAngle = nodeToNode['nodeBearing'] - data['direction']
+            if turnAngle > 180:
+                turnAngle -= 360
+            elif turnAngle <= -180:
+                turnAngle += 360
+            instruction =  'Turn ' + str(turnAngle) + 'degrees and walk ' + str(distanceToNode) + 'cm'
+            if time.time() - instructionTimeStamp > 3.0:
+                instructionTimeStamp = time.time()
                 text_to_speech(instruction)
+            if distanceToNode < 0:
+                break
+            # direction = direction_for_user(displacement['turnAngle'])
+            # instruction = instruction_for_user(direction, displacement['distance'], nextNode.nodeId)
+            
+            # print instruction
+            # if readInstruction == 1:
+            #     text_to_speech(instruction)
             
 
             # position['x'] = int(raw_input('Current x: '))
             # position['y'] = int(raw_input('Current y: '))
             # position['heading'] = int(raw_input('Current heading: '))
-            displacement = displacement_from_position(position, nextNode, northAt)
+            # displacement = displacement_from_position(position, nextNode, northAt)
         reached_message = 'You have reached node ID ' + str(nextNode.nodeId)
+        totalNodeDistance += nodeToNode['distance']
         print reached_message
         text_to_speech(reached_message)
         previousNode = nextNode
     text_to_speech('You have reached the final node')
 
+def path_to_node(nextNode, previousNode, northAt):
+    dx = nextNode.x - previousNode.x
+    dy = nextNode.y - previousNode.y
+    distance = ((dx**2 + dy**2)**0.5)
+    if distance == 0.0:
+        nodeBearing = 0
+    else:
+        nodeBearing = ((90 - math.degrees(math.atan2(dy, dx))) - northAt) % 360
+    # if nodeBearing > 180:
+    #     nodeBearing -= 360
+    # elif nodeBearing <= -180:
+    #     nodeBearing += 360
+    nodeToNode = {'distance':int(distance), 'nodeBearing':int(nodeBearing)}
+    return nodeToNode
+
+
 def received_data_from_arduino(position):
     dataReceived = serial.serialRead()
-    direction = mean(dataReceived['dir'])
-    meanAccelX = mean(dataReceived['accelx'])
-    meanAccelY = mean(dataReceived['accely'])
-    meanAccelZ = mean(dataReceived['accelz'])
-    meanTime = int(mean(dataReceived['timestamp']))
-    # To implement for loop to handle multiple pieces of data in one packet
-    # for value in dataReceived['dir']:
-    response = {}
-    for i in range(len(dataReceived['dir'])):
-        response =  read_step_counter(dataReceived['accelx'][i], dataReceived['accelz'][i], long(dataReceived['timestamp']))
-        if response['status'] == 1: # Step taken
-            position['x'] += 75 * (math.sin(math.radians(int(dataReceived['dir']))))
-            position['y'] += 75 * (math.cos(math.radians(int(dataReceived['dir']))))
-        position['heading'] = int(dataReceived['dir'])
+    # distance = dataReceived['distance']
+    # direction = dataReceived['direction']
 
-    print 'direction: ' + str(direction) + ' acceleration X, Y, Z: ' + str(meanAccelX) + ', ' + str(meanAccelY) + ', ' + str(meanAccelZ)
-    return response['instruction']
+    # response = {}
+    # for i in range(len(dataReceived['dir'])):
+    #     response =  read_step_counter(dataReceived['accelx'][i], dataReceived['accelz'][i], long(dataReceived['timestamp']))
+    #     if response['status'] == 1: # Step taken
+    #         position['x'] += 75 * (math.sin(math.radians(int(dataReceived['dir']))))
+    #         position['y'] += 75 * (math.cos(math.radians(int(dataReceived['dir']))))
+    #     position['heading'] = int(dataReceived['dir'])
+
+    # print 'direction: ' + str(direction) + ' acceleration X, Y, Z: ' + str(meanAccelX) + ', ' + str(meanAccelY) + ', ' + str(meanAccelZ)
+    return dataReceived
 
 def direction_for_user(turnAngle):
     # If angle is between -10 and 10 degrees, ignore it and let the user walks straight
