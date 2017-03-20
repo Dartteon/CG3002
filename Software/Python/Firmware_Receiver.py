@@ -5,12 +5,12 @@ import json
 
 class Arduino():
     serial1 = serial.Serial('/dev/serial0', 9600, timeout=2)
-    handshake = True
     def __init__(self):
         if not self.serial1.isOpen():
             self.serial1.open()
 
     def handshakeWithArduino(self):
+        handshake = True
         print('Initializing Handshake Sequence')
         while handshake:
             msg = "h"
