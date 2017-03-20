@@ -17,6 +17,7 @@ base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s
 engine = pyttsx.init()
 serial = SerialCommunicator()
 arduino = Arduino()
+TTS_DELAY = 3.5
 
 def main():
     # Integer input mode for fixed list of maps
@@ -215,7 +216,6 @@ def path_to_goal(nodeList, route, northAt):
     goalNode = nodeList[route[len(route)-1]-1]
     position = {'x':nodeList[route[index]-1].x, 'y':nodeList[route[index]-1].y, 'heading':0}
     arduino.handshakeWithArduino()
-    instructionTimeStamp = 0.0
     while previousNode is not goalNode:
         index += 1
         nextNode = nodeList[route[index]-1]
@@ -225,10 +225,16 @@ def path_to_goal(nodeList, route, northAt):
         
         # while distanceToNode['distance'] > 20:
         instruction = ''
+        instructionTimeStamp = 0.0
         while True:
+            audio = False
+            if time.time() - instructionTimeStamp > TTS_DELAY:
+                instructionTimeStamp = time.time()
+                audio = True
+
             data = received_data_from_arduino(position)
             if data['distance'] < prevTotalDistance:
-                to_user(instruction, instructionTimeStamp)
+                to_user(instruction, audio)
                 continue
             else:
                 prevTotalDistance = data['distance']
@@ -241,7 +247,7 @@ def path_to_goal(nodeList, route, northAt):
             elif turnAngle <= -180:
                 turnAngle += 360
             instruction =  'Turn ' + str(turnAngle) + ' degrees and walk ' + str(distanceToNode) + ' cm'
-            to_user(instruction, instructionTimeStamp)
+            to_user(instruction, audio)
             
                 # text_to_speech(instruction)
             
@@ -264,13 +270,14 @@ def path_to_goal(nodeList, route, northAt):
         previousNode = nextNode
     text_to_speech('You have reached the final node')
 
-def to_user(instruction, instructionTimeStamp):
+def to_user(instruction, audio):
     if instruction == '':
         return
     print(instruction)
-    if time.time() - instructionTimeStamp > 3.0:
-        instructionTimeStamp = time.time()
+    if audio:
         print('audio')
+        text_to_speech(instruction)
+    newline()
 
 def path_to_node(nextNode, previousNode, northAt):
     dx = nextNode.x - previousNode.x
