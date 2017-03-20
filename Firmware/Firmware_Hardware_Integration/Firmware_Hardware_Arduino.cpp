@@ -93,13 +93,18 @@ long od_timestamp_value = 0;
 #define MAX_STORAGE_SIZE 100
 #define MAX_SENDING_PACKET_SIZE 10
 
+boolean isSendingData = false;
+
 typedef struct stepCountStorageStrt {
-	int dir[MAX_STORAGE_SIZE];
-	int accelx[MAX_STORAGE_SIZE];
-	int accely[MAX_STORAGE_SIZE];
-	int accelz[MAX_STORAGE_SIZE];
-	long timestamp[MAX_STORAGE_SIZE];
+	volatile int direction;
+	volatile float distance;
 } StepCountStorage;
+
+typedef struct backupStepCountStorageStrt {
+	volatile int direction;
+	volatile float distance;
+} BackupStepCountStorage;
+
 
 typedef struct obstDetectionStrt {
 	int dist1[MAX_STORAGE_SIZE]; // Distance from Sensor 1 (Left Arm)
@@ -402,7 +407,7 @@ void transmitStepCountData(void *p) {
 	int i = 0;
 	for (;;) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-		int sc_pos_backup = sc_pos_json;
+		isSendingData= true;
 
 		Serial.println("transmitStepCountData");
 
@@ -410,7 +415,7 @@ void transmitStepCountData(void *p) {
  		JsonObject& json = jsonBuffer.createObject();
 		json["direction"] = lastKnownDirection;
 		json["distance"] = totalDist;
-		long checksum = totalDist % 256;	//### Must make rPi recompute checksum too
+		long checksum = (direction + (int) distance) % 256;	//### Must make rPi recompute checksum too
 		json["checksum"] = checksum;
 		
 /*		JsonArray& dir = json.createNestedArray("dir");
