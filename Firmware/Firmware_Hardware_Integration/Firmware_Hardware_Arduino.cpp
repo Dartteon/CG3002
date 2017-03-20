@@ -208,8 +208,8 @@ void readSensor(int i) {
 
 void calculateNewXThreshold() {
 	xDynamicThreshold = (xMax + xMin) / 2;
-	Serial.print("xDynamicThreshold = ");
-	Serial.println(xDynamicThreshold);
+//	Serial.print("xDynamicThreshold = ");
+//	Serial.println(xDynamicThreshold);
 	xMax = -9999;
 	xMin = 9999;
 }
@@ -399,14 +399,14 @@ void getSensorReadings(void *p) {
 
 //  ===============================  Firmware Functions  ===============================
 static void initialize(bool firstSetup) {
-	bool handshake = true;
+	bool initFlag = true;
 
 	if (!firstSetup) {
 		Serial.flush();
 		Serial1.flush();
 	}
 
-	while (handshake) {
+	while (initFlag) {
 		int msg;
 		if (firstSetup && Serial1.available()) {
 			int msg = Serial1.read();
@@ -557,8 +557,7 @@ void setup() {
 	calibrate();
 
 //  ===============================  Create Hardware Tasks  ===============================
-	xTaskCreate(getAccelReadings, "getAccelReadings", 3 * STACK_SIZE, NULL, 1,
-	NULL);
+	xTaskCreate(getAccelReadings, "getAccelReadings", 3 * STACK_SIZE, NULL, 1, NULL);
 //	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 1, NULL);
 //	xTaskCreate(getSensor1Readings, "getSensor1Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 //	xTaskCreate(getSensor2Readings, "getSensor2Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
