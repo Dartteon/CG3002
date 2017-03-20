@@ -246,7 +246,11 @@ def path_to_goal(nodeList, route, northAt):
                 turnAngle -= 360
             elif turnAngle <= -180:
                 turnAngle += 360
-            instruction =  'Turn ' + str(turnAngle) + ' degrees and walk ' + str(distanceToNode) + ' cm'
+            if abs(turnAngle) > 20:
+                instruction = 'Turn ' + str(turnAngle)
+            else:
+                instruction = 'Walk ' + str(distanceToNode)
+            # instruction =   + ' degrees and walk ' + str(distanceToNode) + ' cm'
             to_user(instruction, audio)
             
                 # text_to_speech(instruction)
