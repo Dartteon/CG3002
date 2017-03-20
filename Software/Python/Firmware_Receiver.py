@@ -4,30 +4,32 @@ import json
 
 
 class Arduino():
-    def handshakeWithArduino(self):
-        serial = SerialCommunicator()
-        initFlag = True
-        while initFlag:
-            msg = "h"
-            serial.serial1.write(msg)
-            msg = serial.serial1.read()
-            print(msg)
-            if (msg == "a"):
-                msg2 = 'a';
-                serial.serial1.write(msg2)
-                initFlag = False
-
-class SerialCommunicator():
-    serial1 = serial.Serial('/dev/serial0',9600,timeout=0.01)
+    serial1 = serial.Serial('/dev/serial0', 9600, timeout=2)
+    handshake = True
     def __init__(self):
-        # initialise serial port with Arduino
-        # self.serial1 = serial.Serial('/dev/serial0',9600,timeout=0.01)
         if not self.serial1.isOpen():
             self.serial1.open()
 
-    def serialWrite(self, message_str):
-        self.ser.write(message_str)
-        return
+    def handshakeWithArduino(self):
+        print('Initializing Handshake Sequence')
+        while handshake:
+            msg = "h"
+            serial1.write(msg)
+            msg = serial1.read()
+            print(msg)
+            if (msg == "a"):
+                msg2 = 'a';
+                serial1.write(msg2)
+                handshake = False
+                print ('Handshake Succeed')
+            else:
+                print ('Handshake Fail')
+
+class SerialCommunicator():
+    serial1 = serial.Serial('/dev/serial0',9600,timeout=2)
+    def __init__(self):
+        if not self.serial1.isOpen():
+            self.serial1.open()
 
     def serialRead(self):
         dataFlag = False
@@ -35,19 +37,23 @@ class SerialCommunicator():
             serial1 = serial.Serial('/dev/serial0',9600,timeout=0.01)
             readings = serial1.readline()
             if readings:
-                msg = 'n'
                 print(readings)
-                json0 = json.loads(readings)
-                checksumPi = 0;
-                for data in json0['timestamp']:
-                    checksumPi = (checksumPi + data) % 256
-                    if (checksumPi == json0['checksum']):
-                        msg = 'a'
-                        dataFlag = True
-                    print(json0['checksum'])
-                    print(checksumPi)
-                    serial1.write(msg)
+                msg = 'n'
+                try:
+                    json0 = json.loads(readings)
+                    checksumPi = (jsonO['direction'] + (int) jsonO['distance']) % 256
+                    for data in jsonO['timestamp']:
+                        checksumPi = (checksumPi + data) % 256
+                        if (checksumPi == jsonO['checksum']):
+                            msg = 'a'
+                            dataFlag = True
+                        #print(json0['checksum'])
+                        #print(checksumPi)
+                except:
+                    print('Error reading')
+                serial1.write(msg)
                 return json0
-
-    def serial(self):
-        return serial1
+            #timeout, from reset
+            print('Timeout')
+            arduino = Arduino()
+            arduino.handshake
