@@ -188,21 +188,21 @@ def get_route(goalNode, nodeList):
     route.reverse()
     return route
 
-def displacement_from_position(position, node, northAt):
-    dx = node.x - position['x']
-    dy = node.y - position['y']
-    distance = ((dx**2 + dy**2)**0.5)
-    if distance == 0.0:
-        turnAngle = 0
-    else:
-        bearing = ((90 - math.degrees(math.atan2(dy, dx))) - northAt) % 360
-        turnAngle = bearing - position['heading']
-    if turnAngle > 180:
-        turnAngle -= 360
-    elif turnAngle <= -180:
-        turnAngle += 360
-    displacement = {'distance':int(distance), 'turnAngle':int(turnAngle)}
-    return displacement
+# def displacement_from_position(position, node, northAt):
+#     dx = node.x - position['x']
+#     dy = node.y - position['y']
+#     distance = ((dx**2 + dy**2)**0.5)
+#     if distance == 0.0:
+#         turnAngle = 0
+#     else:
+#         bearing = ((90 - math.degrees(math.atan2(dy, dx))) - northAt) % 360
+#         turnAngle = bearing - position['heading']
+#     if turnAngle > 180:
+#         turnAngle -= 360
+#     elif turnAngle <= -180:
+#         turnAngle += 360
+#     displacement = {'distance':int(distance), 'turnAngle':int(turnAngle)}
+#     return displacement
 
 def path_to_goal(nodeList, route, northAt):
     index = 0
@@ -290,67 +290,67 @@ def received_data_from_arduino(position):
     # print 'direction: ' + str(direction) + ' acceleration X, Y, Z: ' + str(meanAccelX) + ', ' + str(meanAccelY) + ', ' + str(meanAccelZ)
     return dataReceived
 
-def direction_for_user(turnAngle):
-    # If angle is between -10 and 10 degrees, ignore it and let the user walks straight
-    if turnAngle >= -20 and turnAngle <= 20:
-        direction = 'straight'
+# def direction_for_user(turnAngle):
+#     # If angle is between -10 and 10 degrees, ignore it and let the user walks straight
+#     if turnAngle >= -20 and turnAngle <= 20:
+#         direction = 'straight'
 
-    # Slight turn to the right and left
-    elif turnAngle > 21 and turnAngle <=65:
-        direction = 'slight right turn'
-    elif turnAngle < -21 and turnAngle >= -65:
-        direction = 'slight left turn'
+#     # Slight turn to the right and left
+#     elif turnAngle > 21 and turnAngle <=65:
+#         direction = 'slight right turn'
+#     elif turnAngle < -21 and turnAngle >= -65:
+#         direction = 'slight left turn'
 
-    # Right angle turn to the right and left
-    elif turnAngle > 66 and turnAngle <= 125:
-        direction = 'right turn'
-    elif turnAngle < -66 and turnAngle >= -125:
-        direction = 'left turn'
+#     # Right angle turn to the right and left
+#     elif turnAngle > 66 and turnAngle <= 125:
+#         direction = 'right turn'
+#     elif turnAngle < -66 and turnAngle >= -125:
+#         direction = 'left turn'
 
-    # Major turn to the right and left
-    elif turnAngle > 126 and turnAngle <= 160:
-        direction = 'right and further slight right turn'
-    elif turnAngle < - 126 and turnAngle >= -160:
-        direction = 'left and further slight left turn'
-    else:
-        direction = 'uturn'
-    return direction
+#     # Major turn to the right and left
+#     elif turnAngle > 126 and turnAngle <= 160:
+#         direction = 'right and further slight right turn'
+#     elif turnAngle < - 126 and turnAngle >= -160:
+#         direction = 'left and further slight left turn'
+#     else:
+#         direction = 'uturn'
+#     return direction
 
-def instruction_for_user(direction, distance, nextNode):
-    if direction is 'straight':
-        instruction = 'To reach the next node (node ID ' + str(nextNode) + ') walk straight ' + str(distance) + ' cm.'
-    else:
-        instruction = 'To reach the next node (node ID ' + str(nextNode) + ') make a ' + direction + ' and walk ' + str(distance) + ' cm.'
-    return instruction
+# def instruction_for_user(direction, distance, nextNode):
+#     if direction is 'straight':
+#         instruction = 'To reach the next node (node ID ' + str(nextNode) + ') walk straight ' + str(distance) + ' cm.'
+#     else:
+#         instruction = 'To reach the next node (node ID ' + str(nextNode) + ') make a ' + direction + ' and walk ' + str(distance) + ' cm.'
+#     return instruction
 
-def int_to_buildingName():
-    buildingNameList = ['DemoBuilding', 'COM1', 'COM2']
-    number = 0        
-    while (number - 1) not in range(len(buildingNameList)):
-        try:
-            print('Building?\n1: DemoBuilding\n2: COM1\n3: COM2')
-            number = int(raw_input())
-            if number - 1 not in range(len(buildingNameList)):
-                print 'Please enter an integer building index number from the given list.'
-        except ValueError:
-            print 'That was not an integer.\nPlease enter an integer building index number from the given list.'
-        newline()
-    return buildingNameList[number-1]
+# def int_to_buildingName():
+#     buildingNameList = ['DemoBuilding', 'COM1', 'COM2']
+#     number = 0        
+#     while (number - 1) not in range(len(buildingNameList)):
+#         try:
+#             print('Building?\n1: DemoBuilding\n2: COM1\n3: COM2')
+#             number = int(raw_input())
+#             if number - 1 not in range(len(buildingNameList)):
+#                 print 'Please enter an integer building index number from the given list.'
+#         except ValueError:
+#             print 'That was not an integer.\nPlease enter an integer building index number from the given list.'
+#         newline()
+#     return buildingNameList[number-1]
 
-def int_to_floorNumber(buildingName):
-    floorNumberList = {'DemoBuilding':[1, 2, 3], 'COM1':[1, 2], 'COM2':[2, 3]}
-    floorNumber= 0    
-    while floorNumber not in floorNumberList[buildingName]:
-        try:
-            print 'Floor number?'
-            print str(floorNumberList[buildingName])
-            floorNumber = int(raw_input())
-            if floorNumber not in floorNumberList[buildingName]:
-                print 'Please enter an integer floor number from the given list.'
-        except ValueError:
-            print 'That was not an integer.\nPlease enter an integer floor number from the given list.'
-        newline()
-    return floorNumber
+# def int_to_floorNumber(buildingName):
+#     floorNumberList = {'DemoBuilding':[1, 2, 3], 'COM1':[1, 2], 'COM2':[2, 3]}
+#     floorNumber= 0    
+#     while floorNumber not in floorNumberList[buildingName]:
+#         try:
+#             print 'Floor number?'
+#             print str(floorNumberList[buildingName])
+#             floorNumber = int(raw_input())
+#             if floorNumber not in floorNumberList[buildingName]:
+#                 print 'Please enter an integer floor number from the given list.'
+#         except ValueError:
+#             print 'That was not an integer.\nPlease enter an integer floor number from the given list.'
+#         newline()
+#     return floorNumber
 
 def text_to_speech(text):
     # For testing on Chris' mac
@@ -361,8 +361,8 @@ def text_to_speech(text):
 def newline():
     print('')
 
-def mean(list):
-    return float(sum(list)) / max(len(list), 1)
+# def mean(list):
+#     return float(sum(list)) / max(len(list), 1)
 
 text_to_speech('R pi started and program initialising')
 main()
