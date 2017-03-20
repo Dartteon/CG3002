@@ -16,6 +16,7 @@ base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s
 engine = pyttsx.init()
 serial = SerialCommunicator()
 arduino = Arduino()
+TTS_DELAY = 3.5
 
 def main():
     # Integer input mode for fixed list of maps
@@ -225,9 +226,14 @@ def path_to_goal(nodeList, route, northAt):
         # while distanceToNode['distance'] > 20:
         instruction = ''
         while True:
+            audio = False
+            if time.time() - instructionTimeStamp > TTS_DELAY:
+                instructionTimeStamp = time.time()
+                audio = True
+                # print(instructionTimeStamp, time.time())
             data = received_data_from_arduino(position)
             if data['distance'] < prevTotalDistance:
-                to_user(instruction, instructionTimeStamp)
+                to_user(instruction, audio)
                 continue
             else:
                 prevTotalDistance = data['distance']
@@ -239,8 +245,8 @@ def path_to_goal(nodeList, route, northAt):
                 turnAngle -= 360
             elif turnAngle <= -180:
                 turnAngle += 360
-            instruction =  'Turn ' + str(turnAngle) + ' degrees and walk ' + str(distanceToNode) + ' cm'
-            to_user(instruction, instructionTimeStamp)
+            instruction =  str(turnAngle) + ' degrees and ' + str(distanceToNode) + ' C M'
+            to_user(instruction, audio)
             
                 # text_to_speech(instruction)
             
@@ -263,13 +269,14 @@ def path_to_goal(nodeList, route, northAt):
         previousNode = nextNode
     text_to_speech('You have reached the final node')
 
-def to_user(instruction, instructionTimeStamp):
+def to_user(instruction, audio):
     if instruction == '':
         return
     print(instruction)
-    if time.time() - instructionTimeStamp > 3.0:
-        instructionTimeStamp = time.time()
+    if audio:
         print('audio')
+        text_to_speech(instruction)
+    newline()
 
 def path_to_node(nextNode, previousNode, northAt):
     dx = nextNode.x - previousNode.x
@@ -377,5 +384,5 @@ def newline():
 # def mean(list):
 #     return float(sum(list)) / max(len(list), 1)
 
-text_to_speech('R pi started and program initialising')
+# text_to_speech('R pi started and program initialising')
 main()
