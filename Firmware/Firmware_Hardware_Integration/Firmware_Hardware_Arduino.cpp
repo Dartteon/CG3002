@@ -398,36 +398,31 @@ void getSensorReadings(void *p) {
 }
 
 //  ===============================  Firmware Functions  ===============================
-static void initialize(bool firstSetup) {
+static void initialize() {
 	bool initFlag = true;
 
-	if (!firstSetup) {
-		Serial.flush();
-		Serial1.flush();
-	}
-
 	while (initFlag) {
-		int msg;
-		if (firstSetup && Serial1.available()) {
-			int msg = Serial1.read();
-			Serial.println((char) msg);
-		}
-		if ((!firstSetup) || (msg == 'h')) {
-			msg = 'a';
-			Serial1.write(msg);
-		} else {
-			Serial.println("Handshake: error 2");
-		}
 		if (Serial1.available()) {
 			int msg = Serial1.read();
-			if (msg == 'a') {
-				initFlag = false;
+			Serial.println((char) msg);
+			//Serial.println("1");
+			if (msg == 'h') {
+				msg = 'a';
+				Serial1.write(msg);
+
+				Serial.println((char) msg);
+				if (msg == 'a') {
+					initFlag = false;
+					//Serial.println("2");
+				} else{
+					Serial.print("error 3: ");
+					Serial.println(msg);
+				}
 			}
-		} else {
-			Serial.println("Handshake: error 3");
 		}
 	}
 }
+
 
 //// Firmware Testing
 //// TODO: Integrate with Hardware
@@ -459,14 +454,14 @@ void transmitStepCountData(void *p) {
 
 		Serial.println("transmitStepCountData");
 
-		StaticJsonBuffer<512> jsonBuffer;
+		StaticJsonBuffer<256> jsonBuffer;
 		JsonObject& json = jsonBuffer.createObject();
 		json["direction"] = lastKnownDirection;
 		json["distance"] = totalDist;
-		long checksum = (lastKnownDirection + (int) totalDist) % 256;//### Must make rPi recompute checksum too
+		long checksum = (lastKnownDirection + totalDist) % 256;//### Must make rPi recompute checksum too
 		json["checksum"] = checksum;
 
-		/*		JsonArray& dir = json.createNestedArray("dir");
+		/* JsonArray& dir = json.createNestedArray("dir");
 		 JsonArray& accelx = json.createNestedArray("accelx");
 		 JsonArray& accely = json.createNestedArray("accely");
 		 JsonArray& accelz = json.createNestedArray("accelz");
@@ -483,24 +478,29 @@ void transmitStepCountData(void *p) {
 		 sc_pos_json = (sc_pos_json + 1) % MAX_STORAGE_SIZE;
 		 } */
 
-		while (!Serial1) {
+		// Might have issues if transmit is at higher priority
+		// than getReadings.
+		while(!Serial1){
+
 		}
+
 		json.printTo(Serial1);
-		while (!(Serial1 && Serial1.available())) {
+		Serial1.println("");
+
+		// Might have issues if transmit is at higher priority
+		// than getReadings.
+		while (!(Serial1 && Serial1.available())){
+
 		}
 
-		if (Serial1.available()) {
+		if (Serial1.available()){
 			char msg = Serial1.read();
-
-			if (msg == 'n') {
+			if (msg =='n'){
 				//sc_pos_json = sc_pos_backup;
 			}
-			if (msg == 'h') {
-				initialize(false);
-			}
-
-			Serial.println("transmit msg: " + msg);
-		} else {
+			Serial.println(msg);
+		}
+		else {
 			Serial.println("error");
 			//sc_pos_json = sc_pos_backup;
 		}
@@ -537,7 +537,7 @@ void setup() {
 	pinMode(motorPin4, OUTPUT);
 	pinMode(motorPin5, OUTPUT);
 
-// Compass
+	// Compass
 	Wire.begin();
 	delayMicroseconds(10);
 
@@ -558,22 +558,22 @@ void setup() {
 
 //  ===============================  Create Hardware Tasks  ===============================
 	xTaskCreate(getAccelReadings, "getAccelReadings", 3 * STACK_SIZE, NULL, 1, NULL);
-//	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 1, NULL);
 //	xTaskCreate(getSensor1Readings, "getSensor1Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 //	xTaskCreate(getSensor2Readings, "getSensor2Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 //	xTaskCreate(getSensor3Readings, "getSensor3Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 
 //  ===============================  Setup Firmware Connection  ===============================
 	Serial.flush();
-//	Serial1.flush();
+	Serial1.flush();
 
-//	Serial.println("Begin Arduino-Pi Connection");
-//	initialize(true);
-//	Serial.println("Connection Established. Sending data from Arduino to Pi.");
+	Serial.println("Begin Arduino-Pi Connection");
+	initialize();
+	Serial.println("Connection Established. Sending data from Arduino to Pi.");
 
 //  ===============================  Create Firmware Tasks  ===============================
 //	xTaskCreate(addStepCountDataDebug, "addStepCountData", STACK_SIZE, NULL, 1, NULL); // Debugging Purpose
-//	xTaskCreate(transmitStepCountData, "transmitStepCountData", STACK_SIZE, NULL, 2, NULL); // Keep Transmit at Lower Priority than Sensor Readings
+	xTaskCreate(transmitStepCountData, "transmitStepCountData", STACK_SIZE, NULL, 2, NULL); // Keep Transmit at Lower Priority than Sensor Readings
 
 	vTaskStartScheduler();
 }
