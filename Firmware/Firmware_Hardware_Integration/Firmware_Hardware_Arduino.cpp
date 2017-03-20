@@ -65,7 +65,7 @@ volatile int lastKnownDirection;
 volatile float lastDistanceTaken;
 
 int NUM_SAMPLE_COUNTS_TO_RECALCULATE_THRESHOLD = 50;
-int MINIMUM_ACCELERATION_MAGNITUDE = 7500;
+int MINIMUM_ACCELERATION_MAGNITUDE = 8500;
 int MINIMUM_STEP_INTERVAL_MILLISECONDS = 800;
 int MINIMUM_ACCELERATION_DELTA = 200; //Crossing below threshold not enough - it must be a decent acceleration change
 int DIST_PER_STEP_CM = 75;
