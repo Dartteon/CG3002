@@ -47,23 +47,24 @@ int DURATION_TIMEOUT_SENSOR = 3000;
 int totalDist = 0;
 
 // Step Counter
-int xSampleNew, currAccY, currAccZ;
-int xAccHistory[4] = { 0 };
-int zAccHistory[4] = { 0 };
-int xSamples[50] = { 0 };
-int xDynamicThreshold = 0;
-int xSampleOld = 0;
+volatile int xSampleNew, currAccY, currAccZ;
+volatile int xAccHistory[4] = { 0 };
+volatile int zAccHistory[4] = { 0 };
+volatile int xSamples[50] = { 0 };
+volatile int xDynamicThreshold = 0;
+volatile int xSampleOld = 0;
 int xAccOffset, yAccOffset, zAccOffset;
-int currSampleCount = 0;
-int xMin = 0, xMax = 0;
+volatile int currSampleCount = 0;
+volatile int xMin = 0, xMax = 0;
 unsigned long lastStepTime;
 int numStepsTaken = 0;
+volatile long lastKnownMagnitude = 0;
 
 volatile int lastKnownDirection;
 volatile float lastDistanceTaken;
 
 int NUM_SAMPLE_COUNTS_TO_RECALCULATE_THRESHOLD = 50;
-int MINIMUM_ACCELERATION_Z = 1500;
+int MINIMUM_ACCELERATION_MAGNITUDE = 7500;
 int MINIMUM_STEP_INTERVAL_MILLISECONDS = 800;
 int MINIMUM_ACCELERATION_DELTA = 200; //Crossing below threshold not enough - it must be a decent acceleration change
 int DIST_PER_STEP_CM = 75;
@@ -215,17 +216,24 @@ void incrementSampleCount() {
 void readAltimu() {
 	compass.read();
 	xSampleOld = xSampleNew;  //Compulsory shift in
-	
-	float pitch = compass.heading((LSM303::vector<int>) {
-		0, 1, 0
-	});
-	Serial.print("Pitch "); Serial.println(pitch);
-	float roll = compass.heading((LSM303::vector<int>) {
-		1, 0, 0
-	});
-	Serial.print("Roll "); Serial.println(roll);
-	
-	int newAccX = (int) compass.a.x - xAccOffset;
+
+	int newAccX = (int) compass.a.x;
+	int newAccY = (int) compass.a.y;
+	int newAccZ = (int) compass.a.z;
+
+	long xSquare = (long)newAccX * (long)newAccX;
+	long ySquare = (long)newAccY * (long)newAccY;
+	long zSquare = (long)newAccZ * (long)newAccZ;
+
+	newAccX -= xAccOffset;
+	newAccY -= yAccOffset;
+	newAccZ -= zAccOffset;
+
+	int accDueToGravity = 9810;
+//	Serial.print("X "); Serial.print(newAccX); Serial.print(" --- Y "); Serial.print(newAccY); Serial.print(" --- Z "); Serial.println(newAccZ);
+	lastKnownMagnitude = (long)sqrt((xSquare) + (ySquare) + (zSquare)) - accDueToGravity;
+//	Serial.print("LastKnownMag "); Serial.println(lastKnownMagnitude);
+
 	int xAccDiff = abs(newAccX - xSampleOld);
 	if (xAccDiff >= PREDIFINED_PRECISION) { //delta is significant enough to shift in
 //	    xSampleNew = (xAccHistory[0] + xAccHistory[1] + xAccHistory[2] + newAccX)/4.0;  //Averaging over past 3 readings
@@ -238,10 +246,11 @@ void readAltimu() {
 		if (newAccX < xMin) xMin = newAccX;
 		incrementSampleCount();
 	}
-	currAccY = (int) compass.a.y - yAccOffset;
+
+	currAccY = newAccY;
+	currAccZ = newAccZ;
 
 	//Record zAcceleration values
-	currAccZ = (int) compass.a.z - zAccOffset;
 	zAccHistory[3] = zAccHistory[2];
 	zAccHistory[2] = zAccHistory[1];
 	zAccHistory[1] = zAccHistory[0];
@@ -293,26 +302,34 @@ void getAccelReadings(void *p){
 		unsigned long currTime = millis();
 		unsigned long timeDiff = currTime - lastStepTime;
 		//if (xAccDelta <= MINIMUM_ACCELERATION_DELTA) return;
-		if (	!(xAccDelta < MINIMUM_ACCELERATION_DELTA) &&  //Check that walker has accelerated significantly
-				!(timeDiff < MINIMUM_STEP_INTERVAL_MILLISECONDS) && //Check that steps arent double counted
-				!(currAccZ < MINIMUM_ACCELERATION_Z) //Check that walker is accelerating forward
-			) {
-		//xSamples[currSampleCount] = xSampleNew; //Not needed anymore, removal TBI
-
+		//if (xAccDelta >= MINIMUM_ACCELERATION_DELTA) {
+			//Check that walker has accelerated significantly
 			if (timeDiff >= MINIMUM_STEP_INTERVAL_MILLISECONDS) {
-				if (xSampleNew < xDynamicThreshold) {
-				  lastStepTime = currTime;
-				  numStepsTaken++;
-				  totalDist = DIST_PER_STEP_CM * numStepsTaken;
-				  distanceTaken += DIST_PER_STEP_CM;
-				  Serial.print("Step taken! Total steps - " + (String)numStepsTaken + " ---- AccZ = ");
-				  Serial.print(currAccZ);
-				  Serial.println(" ");
+				//Check that steps arent double counted
+				if (lastKnownMagnitude >= MINIMUM_ACCELERATION_MAGNITUDE) {
+					//Check that walker is accelerating forward
+					if (timeDiff >= MINIMUM_STEP_INTERVAL_MILLISECONDS) {
+						//if (xSampleNew > xDynamicThreshold) {
+						  lastStepTime = currTime;
+						  numStepsTaken++;
+						  totalDist = DIST_PER_STEP_CM * numStepsTaken;
+						  distanceTaken += DIST_PER_STEP_CM;
+						  Serial.print("Step taken!");
+						  Serial.print(numStepsTaken);
+						  Serial.println(" ");
+						//} else {
+						//	Serial.println("Dynamic threshold not met");
+						//}
+					} else {
+			//      Serial.println("Step detected but not within interval threshold");
+					}
+				} else {
+					//Serial.print("Magnitude not met --- "); Serial.println(lastKnownMagnitude);
 				}
 			} else {
-			//      Serial.println("Step detected but not within interval threshold");
+				//Serial.println("Step interval timing not met");
 			}
-		}
+		//}
 
 		lastDistanceTaken += distanceTaken;
 		xSemaphoreGive(xSemaphore);
@@ -534,7 +551,7 @@ void setup() {
 
 	//  ===============================  Create Hardware Tasks  ===============================
 	xTaskCreate(getAccelReadings, "getAccelReadings", 3 * STACK_SIZE, NULL, 1, NULL);
-	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 1, NULL);
+//	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 1, NULL);
 //	xTaskCreate(getSensor1Readings, "getSensor1Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 //	xTaskCreate(getSensor2Readings, "getSensor2Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 //	xTaskCreate(getSensor3Readings, "getSensor3Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
