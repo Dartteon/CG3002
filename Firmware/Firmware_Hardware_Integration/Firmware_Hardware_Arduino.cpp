@@ -100,8 +100,8 @@ long od_timestamp_value = 0;
 boolean isSendingData = false;
 
 typedef struct stepCountStorageStrt {
-	volatile int direction;
-	volatile float distance;
+	volatile int direction = 0;
+	volatile float distance = 0;
 } StepCountStorage;
 
 typedef struct backupStepCountStorageStrt {
@@ -335,10 +335,11 @@ void getAccelReadings(void *p) {
 					lastStepTime = currTime;
 					numStepsTaken++;
 					totalDist = DIST_PER_STEP_CM * numStepsTaken;
-					distanceTaken += DIST_PER_STEP_CM;
-					Serial.print("Step taken!");
+					Serial.print("Step taken! --- ");
 					Serial.print(numStepsTaken);
 					Serial.println(" ");
+					Serial.print("Dist = ");
+					Serial.println(totalDist);
 					//} else {
 					//	Serial.println("Dynamic threshold not met");
 					//}
@@ -359,38 +360,38 @@ void getAccelReadings(void *p) {
 	}
 }
 
-void getSensor1Readings(void *p) {
-	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-
-		readSensor(0);
-
-		xSemaphoreGive(xSemaphore);
-		vTaskDelay(25);
-	}
-}
-
-void getSensor2Readings(void *p) {
-	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-
-		readSensor(1);
-
-		xSemaphoreGive(xSemaphore);
-		vTaskDelay(25);
-	}
-}
-
-void getSensor3Readings(void *p) {
-	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-
-		readSensor(2);
-
-		xSemaphoreGive(xSemaphore);
-		vTaskDelay(25);
-	}
-}
+//void getSensor1Readings(void *p) {
+//	for (;;) {
+//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+//
+//		readSensor(0);
+//
+//		xSemaphoreGive(xSemaphore);
+//		vTaskDelay(25);
+//	}
+//}
+//
+//void getSensor2Readings(void *p) {
+//	for (;;) {
+//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+//
+//		readSensor(1);
+//
+//		xSemaphoreGive(xSemaphore);
+//		vTaskDelay(25);
+//	}
+//}
+//
+//void getSensor3Readings(void *p) {
+//	for (;;) {
+//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+//
+//		readSensor(2);
+//
+//		xSemaphoreGive(xSemaphore);
+//		vTaskDelay(25);
+//	}
+//}
 
 void getSensorReadings(void *p) {
 	for (;;) {
@@ -408,30 +409,31 @@ void getSensorReadings(void *p) {
 }
 
 //  ===============================  Firmware Functions  ===============================
-static void initialize() {
-	bool initFlag = true;
-
-	while (initFlag) {
-		if (Serial1.available()) {
-			int msg = Serial1.read();
-			Serial.println((char) msg);
-			//Serial.println("1");
-			if (msg == 'h') {
-				msg = 'a';
-				Serial1.write(msg);
-
-				Serial.println((char) msg);
-				if (msg == 'a') {
-					initFlag = false;
-					//Serial.println("2");
-				} else{
-					Serial.print("error 3: ");
-					Serial.println(msg);
-				}
-			}
-		}
-	}
-}
+//static void initialize() {
+//	bool initFlag = true;
+//
+//	while (initFlag) {
+//		if (Serial1.available()) {
+//			int msg = Serial1.read();
+//			Serial.println((char) msg);
+//			Serial.println("1");
+//			if (msg == 'h') {
+//				Serial.println("2");
+//				msg = 'a';
+//				Serial1.write(msg);
+//				Serial.println("3");
+//				Serial.println((char) msg);
+//				if (msg == 'a') {
+//					initFlag = false;
+//					//Serial.println("2");
+//				} else{
+//					Serial.print("error 3: ");
+//					Serial.println(msg);
+//				}
+//			}
+//		}
+//	}
+//}
 
 
 //// Firmware Testing
@@ -462,14 +464,20 @@ void transmitStepCountData(void *p) {
 		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 		isSendingData = true;
 
-		Serial.println("transmitStepCountData");
+		int distanceToTransmit = 0;
+		distanceToTransmit += totalDist;
+		Serial.print("transmitStepCountData");
+		Serial.println(distanceToTransmit);
 
 		StaticJsonBuffer<256> jsonBuffer;
 		JsonObject& json = jsonBuffer.createObject();
 		json["direction"] = lastKnownDirection;
-		json["distance"] = totalDist;
+		json["distance"] = numStepsTaken;
 		long checksum = (lastKnownDirection + totalDist) % 256;//### Must make rPi recompute checksum too
 		json["checksum"] = checksum;
+
+		Serial.print("numStepsTaken: ");
+		Serial.println(numStepsTaken);
 
 		/* JsonArray& dir = json.createNestedArray("dir");
 		 JsonArray& accelx = json.createNestedArray("accelx");
@@ -567,7 +575,7 @@ void setup() {
 	calibrate();
 
 //  ===============================  Create Hardware Tasks  ===============================
-	xTaskCreate(getAccelReadings, "getAccelReadings", 3 * STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(getAccelReadings, "getAccelReadings", 3*STACK_SIZE, NULL, 1, NULL);
 	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 1, NULL);
 //	xTaskCreate(getSensor1Readings, "getSensor1Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 //	xTaskCreate(getSensor2Readings, "getSensor2Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
@@ -578,7 +586,7 @@ void setup() {
 	Serial1.flush();
 
 	Serial.println("Begin Arduino-Pi Connection");
-	initialize();
+//	initialize();
 	Serial.println("Connection Established. Sending data from Arduino to Pi.");
 
 //  ===============================  Create Firmware Tasks  ===============================
