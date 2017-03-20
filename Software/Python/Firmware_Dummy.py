@@ -19,7 +19,10 @@ class SerialCommunicator():
         return
 
     def serialRead(self):
-        readings = '{"dir":[1,2,3,4,5],"accelx":[1,2,3,4,5],"accely":[1,2,3,4,5],"accelz":[1,2,3,4,5],"timestamp":[1,2,3,4,5],"checksum":15}'
+        direction = str(raw_input('direction: '))
+        distance = str(raw_input('distance: '))
+        readings = '{"direction":'+direction+', "distance":'+distance+'}'
+        # readings = '{"dir":[1,2,3,4,5],"accelx":[1,2,3,4,5],"accely":[1,2,3,4,5],"accelz":[1,2,3,4,5],"timestamp":[1,2,3,4,5],"checksum":15}'
         json0 = json.loads(readings)
-        print(json0)
+        # print(json0)
         return json0

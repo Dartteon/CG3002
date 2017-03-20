@@ -1,6 +1,8 @@
 from urllib2 import urlopen
-from Firmware_Receiver import SerialCommunicator
-from Firmware_Receiver import Arduino
+# from Firmware_Receiver import SerialCommunicator
+# from Firmware_Receiver import Arduino
+from Firmware_Dummy import SerialCommunicator
+from Firmware_Dummy import Arduino
 import pyttsx
 import json 
 import heapq
@@ -206,8 +208,8 @@ def get_route(goalNode, nodeList):
 
 def path_to_goal(nodeList, route, northAt):
     index = 0
-    totalDistance = 0
     totalNodeDistance = 0
+    prevTotalDistance = 0
     previousNode = nodeList[route[index]-1]
     goalNode = nodeList[route[len(route)-1]-1]
     position = {'x':nodeList[route[index]-1].x, 'y':nodeList[route[index]-1].y, 'heading':0}
@@ -221,24 +223,27 @@ def path_to_goal(nodeList, route, northAt):
         # If the user is within 20cm to the next node, we will take it as they have reached that node
         
         # while distanceToNode['distance'] > 20:
+        instruction = ''
         while True:
             data = received_data_from_arduino(position)
-            nodeToNode['distance']
-            nodeToNode['nodeBearing']
-            data['distance']
-            data['direction']
+            if data['distance'] < prevTotalDistance:
+                to_user(instruction, instructionTimeStamp)
+                continue
+            else:
+                prevTotalDistance = data['distance']
             distanceToNode = nodeToNode['distance'] - (data['distance'] - totalNodeDistance)
+            if distanceToNode <= 0:
+                break
             turnAngle = nodeToNode['nodeBearing'] - data['direction']
             if turnAngle > 180:
                 turnAngle -= 360
             elif turnAngle <= -180:
                 turnAngle += 360
-            instruction =  'Turn ' + str(turnAngle) + 'degrees and walk ' + str(distanceToNode) + 'cm'
-            if time.time() - instructionTimeStamp > 3.0:
-                instructionTimeStamp = time.time()
-                text_to_speech(instruction)
-            if distanceToNode < 0:
-                break
+            instruction =  'Turn ' + str(turnAngle) + ' degrees and walk ' + str(distanceToNode) + ' cm'
+            to_user(instruction, instructionTimeStamp)
+            
+                # text_to_speech(instruction)
+            
             # direction = direction_for_user(displacement['turnAngle'])
             # instruction = instruction_for_user(direction, displacement['distance'], nextNode.nodeId)
             
@@ -257,6 +262,14 @@ def path_to_goal(nodeList, route, northAt):
         text_to_speech(reached_message)
         previousNode = nextNode
     text_to_speech('You have reached the final node')
+
+def to_user(instruction, instructionTimeStamp):
+    if instruction == '':
+        return
+    print(instruction)
+    if time.time() - instructionTimeStamp > 3.0:
+        instructionTimeStamp = time.time()
+        print('audio')
 
 def path_to_node(nextNode, previousNode, northAt):
     dx = nextNode.x - previousNode.x
