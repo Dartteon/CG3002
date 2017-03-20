@@ -69,7 +69,7 @@ int MINIMUM_ACCELERATION_MAGNITUDE = 7500;
 int MINIMUM_STEP_INTERVAL_MILLISECONDS = 800;
 int MINIMUM_ACCELERATION_DELTA = 200; //Crossing below threshold not enough - it must be a decent acceleration change
 int DIST_PER_STEP_CM = 75;
-int PREDIFINED_PRECISION = 550; //minimum delta to shift new value into xSampleNew (xSampleNew)
+int PREDIFINED_PRECISION = 250; //minimum delta to shift new value into xSampleNew (xSampleNew)
 float PERCENTAGE_BELOW_DYNAMIC_THRESHOLD_TRIGGER = .2; //xAcc must be significantly below threshold, TBI
 //  ==============================================================================
 
