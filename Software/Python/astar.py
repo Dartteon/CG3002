@@ -9,6 +9,7 @@ import heapq
 import math
 from stepCounter import read_step_counter
 import time
+import os
 
 # Base URL for map info download
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
@@ -368,8 +369,9 @@ def received_data_from_arduino(position):
 def text_to_speech(text):
     # For testing on Chris' mac
     # print 'Text-to-speech goes here'
-    engine.say(text)
-    engine.runAndWait()
+    # engine.say(text)
+    # engine.runAndWait()
+    os.system("espeak '{msg}' 2>/dev/null".format(msg = text))
 
 def newline():
     print('')
