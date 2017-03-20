@@ -41,7 +41,7 @@ class SerialCommunicator():
                 msg = 'n'
                 try:
                     json0 = json.loads(readings)
-                    checksumPi = (jsonO['direction'] + (int) jsonO['distance']) % 256
+                    checksumPi = (jsonO['direction'] + int(jsonO['distance'])) % 256
                     for data in jsonO['timestamp']:
                         checksumPi = (checksumPi + data) % 256
                         if (checksumPi == jsonO['checksum']):

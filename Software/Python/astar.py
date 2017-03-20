@@ -1,8 +1,8 @@
 from urllib2 import urlopen
-# from Firmware_Receiver import SerialCommunicator
-# from Firmware_Receiver import Arduino
-from Firmware_Dummy import SerialCommunicator
-from Firmware_Dummy import Arduino
+from Firmware_Receiver import SerialCommunicator
+from Firmware_Receiver import Arduino
+# from Firmware_Dummy import SerialCommunicator
+# from Firmware_Dummy import Arduino
 import pyttsx
 import json 
 import heapq
