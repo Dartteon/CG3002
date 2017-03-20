@@ -68,7 +68,7 @@ int MINIMUM_ACCELERATION_MAGNITUDE = 7500;
 int MINIMUM_STEP_INTERVAL_MILLISECONDS = 800;
 int MINIMUM_ACCELERATION_DELTA = 200; //Crossing below threshold not enough - it must be a decent acceleration change
 int DIST_PER_STEP_CM = 75;
-int PREDIFINED_PRECISION = 550; //minimum delta to shift new value into xSampleNew (xSampleNew)
+int PREDIFINED_PRECISION = 250; //minimum delta to shift new value into xSampleNew (xSampleNew)
 float PERCENTAGE_BELOW_DYNAMIC_THRESHOLD_TRIGGER = .2;  //xAcc must be significantly below threshold, TBI
 //  ==============================================================================
 
@@ -309,7 +309,7 @@ void getAccelReadings(void *p){
 				if (lastKnownMagnitude >= MINIMUM_ACCELERATION_MAGNITUDE) {
 					//Check that walker is accelerating forward
 					if (timeDiff >= MINIMUM_STEP_INTERVAL_MILLISECONDS) {
-						//if (xSampleNew > xDynamicThreshold) {
+						if (xSampleNew > xDynamicThreshold) {
 						  lastStepTime = currTime;
 						  numStepsTaken++;
 						  totalDist = DIST_PER_STEP_CM * numStepsTaken;
@@ -317,9 +317,9 @@ void getAccelReadings(void *p){
 						  Serial.print("Step taken!");
 						  Serial.print(numStepsTaken);
 						  Serial.println(" ");
-						//} else {
-						//	Serial.println("Dynamic threshold not met");
-						//}
+						} else {
+							Serial.println("Dynamic threshold not met");
+						}
 					} else {
 			//      Serial.println("Step detected but not within interval threshold");
 					}
@@ -335,6 +335,16 @@ void getAccelReadings(void *p){
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(1);
 	}
+}
+
+bool checkSufficientAccChangeX () {
+	long sum = 0;
+	sum += xAccHistory[0];
+	sum += xAccHistory[1];
+	sum += xAccHistory[2];
+	sum += xAccHistory[3];
+	long average = sum/4;
+	return (average < xDynamicThreshold);
 }
 
 void getSensor1Readings(void *p){
