@@ -215,6 +215,16 @@ void incrementSampleCount() {
 void readAltimu() {
 	compass.read();
 	xSampleOld = xSampleNew;  //Compulsory shift in
+	
+	float pitch = compass.heading((LSM303::vector<int>) {
+		0, 1, 0
+	});
+	Serial.print("Pitch "); Serial.println(pitch);
+	float roll = compass.heading((LSM303::vector<int>) {
+		1, 0, 0
+	});
+	Serial.print("Roll "); Serial.println(roll);
+	
 	int newAccX = (int) compass.a.x - xAccOffset;
 	int xAccDiff = abs(newAccX - xSampleOld);
 	if (xAccDiff >= PREDIFINED_PRECISION) { //delta is significant enough to shift in
@@ -239,7 +249,7 @@ void readAltimu() {
 
 //	Serial.print("AccX "); Serial.println(newAccX);
 //	Serial.print("AccY "); Serial.println(currAccY);
-	Serial.print("AccZ "); Serial.println(currAccZ);
+//	Serial.print("AccZ "); Serial.println(currAccZ);
 
 	lastKnownDirection = (int)compass.heading((LSM303::vector<int>) {
 		0, 0, 1
