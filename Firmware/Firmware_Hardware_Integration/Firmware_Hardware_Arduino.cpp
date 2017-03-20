@@ -44,11 +44,12 @@ long duration, distance, rightArmSensor, frontSensor, leftArmSensor, leftLegSens
 int DIST_THRESHOLD_SIDES = 50;
 int DIST_THRESHOLD_MID = 50;
 int DURATION_TIMEOUT_SENSOR = 3000;
+int totalDist = 0;
 
 // Step Counter
 int xSampleNew, currAccY, currAccZ;
 int xAccHistory[4] = { 0 };
-int yAccHistory[4] = { 0 };
+int zAccHistory[4] = { 0 };
 int xSamples[50] = { 0 };
 int xDynamicThreshold = 0;
 int xSampleOld = 0;
@@ -182,19 +183,19 @@ void readSensor(int i) {
 
 // ================= Accelerometer
 
-// Hardware-Firmware API: Put Data into Firmware Storage
-void addStepCountData(int dir, int accelx, int accely, int accelz,
-		long timestamp) {
-	Serial.println("addStepCountData");
-
-	stepCountStorage.dir[sc_pos_packet] = dir;
-	stepCountStorage.accelx[sc_pos_packet] = accelx;
-	stepCountStorage.accely[sc_pos_packet] = accely;
-	stepCountStorage.accelz[sc_pos_packet] = accelz;
-	stepCountStorage.timestamp[sc_pos_packet] = timestamp;
-
-	sc_pos_packet = (sc_pos_packet + 1) % MAX_STORAGE_SIZE;
-}
+//// Hardware-Firmware API: Put Data into Firmware Storage
+//void addStepCountData(int dir, int accelx, int accely, int accelz,
+//		long timestamp) {
+//	Serial.println("addStepCountData");
+//
+//	stepCountStorage.dir[sc_pos_packet] = dir;
+//	stepCountStorage.accelx[sc_pos_packet] = accelx;
+//	stepCountStorage.accely[sc_pos_packet] = accely;
+//	stepCountStorage.accelz[sc_pos_packet] = accelz;
+//	stepCountStorage.timestamp[sc_pos_packet] = timestamp;
+//
+//	sc_pos_packet = (sc_pos_packet + 1) % MAX_STORAGE_SIZE;
+//}
 
 void calculateNewXThreshold() {
 	xDynamicThreshold = (xMax + xMin) / 2;
@@ -228,7 +229,7 @@ void readAltimu() {
 		incrementSampleCount();
 	}
 	currAccY = (int) compass.a.y - yAccOffset;
-	
+
 	//Record zAcceleration values
 	currAccZ = (int) compass.a.z - zAccOffset;
 	zAccHistory[3] = zAccHistory[2];
@@ -236,8 +237,8 @@ void readAltimu() {
 	zAccHistory[1] = zAccHistory[0];
 	zAccHistory[0] = currAccZ;
 
-	Serial.print("AccX "); Serial.println(newAccX);
-	Serial.print("AccY "); Serial.println(currAccY);
+//	Serial.print("AccX "); Serial.println(newAccX);
+//	Serial.print("AccY "); Serial.println(currAccY);
 	Serial.print("AccZ "); Serial.println(currAccZ);
 
 	lastKnownDirection = (int)compass.heading((LSM303::vector<int>) {
@@ -275,32 +276,34 @@ void getAccelReadings(void *p){
 
 		int prevSample = xSampleNew; //Get previous reading
 		readAltimu();
-		
+
 		//Now check if step is taken
 		float distanceTaken = 0;
-		int xAccDelta = abs(prevSample - xSampleNew);  
+		int xAccDelta = abs(prevSample - xSampleNew);
 		unsigned long currTime = millis();
 		unsigned long timeDiff = currTime - lastStepTime;
 		//if (xAccDelta <= MINIMUM_ACCELERATION_DELTA) return;
-		if (xAccDelta < MINIMUM_ACCELERATION_DELTA) return;  //Check that walker has accelerated significantly
-		if (timeDiff < MINIMUM_STEP_INTERVAL_MILLISECONDS) return; //Check that steps arent double counted
-		if (currAccZ < MINIMUM_ACCELERATION_Z) return; //Check that walker is accelerating forward
+		if (	!(xAccDelta < MINIMUM_ACCELERATION_DELTA) &&  //Check that walker has accelerated significantly
+				!(timeDiff < MINIMUM_STEP_INTERVAL_MILLISECONDS) && //Check that steps arent double counted
+				!(currAccZ < MINIMUM_ACCELERATION_Z) //Check that walker is accelerating forward
+			) {
 		//xSamples[currSampleCount] = xSampleNew; //Not needed anymore, removal TBI
 
-		if (timeDiff >= MINIMUM_STEP_INTERVAL_MILLISECONDS) {
-			if (xSampleNew < xDynamicThreshold) {
-			  lastStepTime = currTime;
-			  numStepsTaken++;
-			  int totalDist = DIST_PER_STEP_CM * numStepsTaken;
-			  distanceTaken += DIST_PER_STEP_CM;
-			  Serial.print("Step taken! Total steps - " + (String)numStepsTaken + " ---- AccZ = ");
-			  Serial.print(currAccZ);
-			  Serial.println(" ");
+			if (timeDiff >= MINIMUM_STEP_INTERVAL_MILLISECONDS) {
+				if (xSampleNew < xDynamicThreshold) {
+				  lastStepTime = currTime;
+				  numStepsTaken++;
+				  totalDist = DIST_PER_STEP_CM * numStepsTaken;
+				  distanceTaken += DIST_PER_STEP_CM;
+				  Serial.print("Step taken! Total steps - " + (String)numStepsTaken + " ---- AccZ = ");
+				  Serial.print(currAccZ);
+				  Serial.println(" ");
+				}
+			} else {
+			//      Serial.println("Step detected but not within interval threshold");
 			}
-		} else {
-		//      Serial.println("Step detected but not within interval threshold");
 		}
-		
+
 		lastDistanceTaken += distanceTaken;
 		xSemaphoreGive(xSemaphore);
 		vTaskDelay(1);
@@ -381,26 +384,26 @@ static void initialize() {
 	}
 }
 
-// Firmware Testing
-// TODO: Integrate with Hardware
-void addStepCountDataDebug(void *p) {
-	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-
-		Serial.println("addStepCountData");
-
-		stepCountStorage.dir[sc_pos_packet] = dir_value;
-		stepCountStorage.accelx[sc_pos_packet] = accelx_value;
-		stepCountStorage.accely[sc_pos_packet] = accely_value;
-		stepCountStorage.accelz[sc_pos_packet] = accelz_value;
-		stepCountStorage.timestamp[sc_pos_packet] = sc_timestamp_value;
-
-		sc_pos_packet = (sc_pos_packet + 1) % MAX_STORAGE_SIZE;
-
-		xSemaphoreGive(xSemaphore);
-		vTaskDelay(1);
-	}
-}
+//// Firmware Testing
+//// TODO: Integrate with Hardware
+//void addStepCountDataDebug(void *p) {
+//	for (;;) {
+//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+//
+//		Serial.println("addStepCountData");
+//
+//		stepCountStorage.dir[sc_pos_packet] = dir_value;
+//		stepCountStorage.accelx[sc_pos_packet] = accelx_value;
+//		stepCountStorage.accely[sc_pos_packet] = accely_value;
+//		stepCountStorage.accelz[sc_pos_packet] = accelz_value;
+//		stepCountStorage.timestamp[sc_pos_packet] = sc_timestamp_value;
+//
+//		sc_pos_packet = (sc_pos_packet + 1) % MAX_STORAGE_SIZE;
+//
+//		xSemaphoreGive(xSemaphore);
+//		vTaskDelay(1);
+//	}
+//}
 
 // TODO: Integrate with Hardware
 void transmitStepCountData(void *p) {
@@ -415,9 +418,9 @@ void transmitStepCountData(void *p) {
  		JsonObject& json = jsonBuffer.createObject();
 		json["direction"] = lastKnownDirection;
 		json["distance"] = totalDist;
-		long checksum = (direction + (int) distance) % 256;	//### Must make rPi recompute checksum too
+		long checksum = (lastKnownDirection + (int) totalDist) % 256;	//### Must make rPi recompute checksum too
 		json["checksum"] = checksum;
-		
+
 /*		JsonArray& dir = json.createNestedArray("dir");
 		JsonArray& accelx = json.createNestedArray("accelx");
 		JsonArray& accely = json.createNestedArray("accely");
@@ -520,7 +523,7 @@ void setup() {
 	calibrate();
 
 	//  ===============================  Create Hardware Tasks  ===============================
-	xTaskCreate(getAccelReadings, "getAccelReadings", STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(getAccelReadings, "getAccelReadings", 3 * STACK_SIZE, NULL, 1, NULL);
 	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 1, NULL);
 //	xTaskCreate(getSensor1Readings, "getSensor1Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 //	xTaskCreate(getSensor2Readings, "getSensor2Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
@@ -528,15 +531,15 @@ void setup() {
 
 	//  ===============================  Setup Firmware Connection  ===============================
 	Serial.flush();
-	Serial1.flush();
+//	Serial1.flush();
 
-	Serial.println("Begin Arduino-Pi Connection");
-	initialize();
-	Serial.println("Connection Established. Sending data from Arduino to Pi.");
+//	Serial.println("Begin Arduino-Pi Connection");
+//	initialize();
+//	Serial.println("Connection Established. Sending data from Arduino to Pi.");
 
 	//  ===============================  Create Firmware Tasks  ===============================
 //	xTaskCreate(addStepCountDataDebug, "addStepCountData", STACK_SIZE, NULL, 1, NULL); // Debugging Purpose
-	xTaskCreate(transmitStepCountData, "transmitStepCountData", STACK_SIZE, NULL, 2, NULL); // Keep Transmit at Lower Priority than Sensor Readings
+//	xTaskCreate(transmitStepCountData, "transmitStepCountData", STACK_SIZE, NULL, 2, NULL); // Keep Transmit at Lower Priority than Sensor Readings
 
 	vTaskStartScheduler();
 }
