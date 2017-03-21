@@ -12,6 +12,7 @@ import time
 import os
 import threading
 from voiceThread import VoiceHandler
+from voiceThread import INSTRUCTION
 
 # Base URL for map info download
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
@@ -243,14 +244,14 @@ def path_to_goal(nodeList, route, northAt):
                 step = True
                 # text_to_speech(str(data['distance']) + ' steps')
                 msg = str(data['distance']) + ' steps'
-                voiceOutput.addToQueue(msg)
+                voiceOutput.addToQueue(INSTRUCTION(msg, 0))
                 print(data['distance'], ' steps')
                 prevTotalDistance = data['distance']
             else:
                 print(data['distance'], ' steps')
                 # text_to_speech(str(data['distance']) + ' steps')
                 msg = str(data['distance']) + ' steps'
-                voiceOutput.addToQueue(msg)
+                voiceOutput.addToQueue(INSTRUCTION(msg,0))
             time.sleep(1)
 
         if time.time() - instructionTimeStamp > TTS_DELAY:
@@ -297,10 +298,10 @@ def path_to_goal(nodeList, route, northAt):
         totalNodeDistance += nodeToNode['distance']
         print reached_message
         # text_to_speech(reached_message)
-        voiceOutput.addToQueue(reached_message)
+        voiceOutput.addToQueue(INSTRUCTION(reached_message, 0))
         previousNode = nextNode
     # text_to_speech('You have reached the final node')
-    voiceOutput.addToQueue('You have reached the final node')
+    voiceOutput.addToQueue(INSTRUCTION('You have reached the final node', 0))
 
 def to_user(instruction, audio):
     if instruction == '':
