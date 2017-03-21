@@ -10,6 +10,8 @@ import math
 from stepCounter import read_step_counter
 import time
 import os
+import threading
+from voiceThread import VoiceHandler
 
 # Base URL for map info download
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
@@ -18,6 +20,9 @@ engine = pyttsx.init()
 serial = SerialCommunicator()
 arduino = Arduino()
 TTS_DELAY = 3.5
+voiceOutput = VoiceHandler()
+voiceThread = threading.Thread(target=voiceOutput.voiceLoop)
+voiceThread.start()
 
 def main():
     # Integer input mode for fixed list of maps
@@ -232,15 +237,22 @@ def path_to_goal(nodeList, route, northAt):
             step = False
             distanceAudio = False
             step = False
-            data = received_data_from_arduino(position)
+            # data = received_data_from_arduino(position)
+            data = request_data_from_arduino()
             if data['distance'] > prevTotalDistance:
                 step = True
-                text_to_speech(str(data['distance']) + ' steps')
+                # text_to_speech(str(data['distance']) + ' steps')
+                msg = str(data['distance']) + ' steps'
+                voiceOutput.addToQueue(msg)
                 print(data['distance'], ' steps')
                 prevTotalDistance = data['distance']
             else:
                 print(data['distance'], ' steps')
-                text_to_speech(str(data['distance']) + ' steps')
+                # text_to_speech(str(data['distance']) + ' steps')
+                msg = str(data['distance']) + ' steps'
+                voiceOutput.addToQueue(msg)
+            time.sleep(1)
+
         if time.time() - instructionTimeStamp > TTS_DELAY:
             instructionTimeStamp = time.time()
             audio = True
@@ -284,9 +296,11 @@ def path_to_goal(nodeList, route, northAt):
         reached_message = 'You have reached node ID ' + str(nextNode.nodeId)
         totalNodeDistance += nodeToNode['distance']
         print reached_message
-        text_to_speech(reached_message)
+        # text_to_speech(reached_message)
+        voiceOutput.addToQueue(reached_message)
         previousNode = nextNode
-    text_to_speech('You have reached the final node')
+    # text_to_speech('You have reached the final node')
+    voiceOutput.addToQueue('You have reached the final node')
 
 def to_user(instruction, audio):
     if instruction == '':
@@ -328,6 +342,11 @@ def received_data_from_arduino(position):
 
     # print 'direction: ' + str(direction) + ' acceleration X, Y, Z: ' + str(meanAccelX) + ', ' + str(meanAccelY) + ', ' + str(meanAccelZ)
     return dataReceived
+
+def request_data_from_arduino():
+    dataRequested = serial.serialRead()
+    print dataRequested
+    return dataRequested
 
 # def direction_for_user(turnAngle):
 #     # If angle is between -10 and 10 degrees, ignore it and let the user walks straight
