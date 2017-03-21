@@ -226,45 +226,45 @@ def path_to_goal(nodeList, route, northAt):
         # while distanceToNode['distance'] > 20:
         instruction = ''
         instructionTimeStamp = 0.0
-	distanceTimeStamp = 0.0
+        distanceTimeStamp = 0.0
         while True:
             audio = False
-	    step = False
-	    distanceAudio = False
-	    step = False
-	    data = received_data_from_arduino(position)
-	    if data['distance'] > prevTotalDistance:
-		step = True
-		text_to_speech(str(data['distance']) + ' steps')
-		print(data['distance'], ' steps')
-		prevTotalDistance = data['distance']
-	    else:
-		print(data['distance'], ' steps')
-		text_to_speech(str(data['distance']) + ' steps')
+            step = False
+            distanceAudio = False
+            step = False
+            data = received_data_from_arduino(position)
+            if data['distance'] > prevTotalDistance:
+                step = True
+                text_to_speech(str(data['distance']) + ' steps')
+                print(data['distance'], ' steps')
+                prevTotalDistance = data['distance']
+            else:
+                print(data['distance'], ' steps')
+                text_to_speech(str(data['distance']) + ' steps')
+        if time.time() - instructionTimeStamp > TTS_DELAY:
+            instructionTimeStamp = time.time()
+            audio = True
+        if time.time() - distanceTimeStamp > 2 * TTS_DELAY:
+            if not step:
+                if not audio:
+                    distanceTimeStamp = time.time()
+                    distanceAudio = True
 
-            if time.time() - instructionTimeStamp > TTS_DELAY:
-                instructionTimeStamp = time.time()
-                audio = True
-	    if time.time() - distanceTimeStamp > 2 * TTS_DELAY:
-		if not step:
-		    if not audio:
-			distanceTimeStamp = time.time()
-			distanceAudio = True
-
-            distanceToNode = nodeToNode['distance'] - (data['distance']*60 - totalNodeDistance)
-            if distanceToNode <= 0:
-                break
-            turnAngle = nodeToNode['nodeBearing'] - data['direction'] + 20 #offset
-            if turnAngle > 180:
-                turnAngle -= 360
-            elif turnAngle <= -180:
-                turnAngle += 360
-	    if abs(turnAngle) > 20:
-		instruction = 'Turn ' + str(turnAngle)
-		to_user(instruction, audio)
-	    else:
-		instruction = 'Walk ' + str(distanceToNode)
-		to_user(instruction, distanceAudio)
+        distanceToNode = nodeToNode['distance'] - (data['distance']*60 - totalNodeDistance)
+        if distanceToNode <= 0:
+            break
+        turnAngle = nodeToNode['nodeBearing'] - data['direction'] + 20 #offset
+        if turnAngle > 180:
+            turnAngle -= 360
+        elif turnAngle <= -180:
+            turnAngle += 360
+            
+        if abs(turnAngle) > 20:
+            instruction = 'Turn ' + str(turnAngle)
+            to_user(instruction, audio)
+        else:
+            instruction = 'Walk ' + str(distanceToNode)
+            to_user(instruction, distanceAudio)
 #            instruction =  'Turn ' + str(turnAngle) + ' degrees and walk ' + str(distanceToNode) + ' cm'
             
                 # text_to_speech(instruction)
