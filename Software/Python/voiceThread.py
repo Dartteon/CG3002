@@ -8,21 +8,26 @@ from Queue import Queue
 from Queue import PriorityQueue
 
 ttsTemplate = "espeak -s150 '{msg}' 2>/dev/null"
-SPEECH_DELAY = 1
+SPEECH_DELAY = 0.5
 
 class INSTRUCTION:
     '''Used instead of string to make comparable for priority queue'''
-    def __init__(self, message, p):
+    def __init__(self, m, p, t):
         '''Initialise instruction'''
-        self.message = str(message)
+        self.m = str(m)
         self.p = int(p)
+        self.t = float(t)
         
     def __lt__(self, other):
         '''Return true if self instruction has smaller p than other instruction'''
+        if self.p == other.p:
+            return self.t < other.t
         return self.p < other.p
 
     def __eq__(self, other):
         '''Return true if both instructions have the same p'''
+        if self.p == other.p:
+            return self.t == other.t
         return self.p == other.p
 	
 class VoiceHandler:

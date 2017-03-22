@@ -15,13 +15,16 @@ import messages
 from voiceThread import VoiceHandler
 from voiceThread import INSTRUCTION
 
+TTS_DELAY = 3.5 # Text to speech delay in seconds
+STRIDE_LENGTH = 60 # Stride length in cm
+
 # Base URL for map info download
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
+
 # Initialising Text-to-Speech
 engine = pyttsx.init()
 serial = SerialCommunicator()
 arduino = Arduino()
-TTS_DELAY = 3.5
 voiceOutput = VoiceHandler()
 voiceThread = threading.Thread(target=voiceOutput.voiceLoop)
 voiceThread.start()
@@ -34,10 +37,10 @@ def main():
     info = None
     while info is None:
         # text_to_speech(messages.INPUT_BUILDING_NUMBER)
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, 0))
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, 0, time.time()))
         buildingNameOrNumber = str(raw_input('Building name or number: '))
         # text_to_speech(messages.INPUT_BUILDING_LEVEL)        
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, 0))
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, 0, time.time()))
         floorNumber = raw_input('Floor number: ')
 
         jsonmap = get_json(buildingNameOrNumber, floorNumber)
@@ -61,10 +64,10 @@ def main():
         try:
             print buildingName + ' Floor ' + str(floorNumber) + ' has node IDs from 1 to ' + str(len(nodeList))
             # text_to_speech(messages.INPUT_START_NODE)
-            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, 0))
+            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, 0, time.time()))
             startNode = nodeList[int(raw_input('Start node ID: '))-1]
             # text_to_speech(messages.INPUT_END_NODE)
-            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, 0))
+            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, 0, time.time()))
             goalNode = nodeList[int(raw_input('Goal node ID: '))-1]
         except IndexError:
             print(messages.OUT_OF_RANGE)
@@ -228,6 +231,8 @@ def path_to_goal(nodeList, route, northAt):
     index = 0
     totalNodeDistance = 0
     prevTotalDistance = 0
+    counter=0
+    counterx=0
     previousNode = nodeList[route[index]-1]
     goalNode = nodeList[route[len(route)-1]-1]
     position = {'x':nodeList[route[index]-1].x, 'y':nodeList[route[index]-1].y, 'heading':0}
@@ -238,6 +243,7 @@ def path_to_goal(nodeList, route, northAt):
         nextNode = nodeList[route[index]-1]
         # displacement = displacement_from_position(position, nextNode, northAt)
         nodeToNode = path_to_node(nextNode, previousNode, northAt)
+        print 'calculate node to node'
         # If the user is within 20cm to the next node, we will take it as they have reached that node
         
         # while distanceToNode['distance'] > 20:
@@ -256,7 +262,7 @@ def path_to_goal(nodeList, route, northAt):
                 # text_to_speech(str(data['distance']) + ' steps')
                 msg = str(data['distance']) + ' steps'
                 prevStepsTaken = data['distance']
-                voiceOutput.addToQueue(INSTRUCTION(msg, 0))
+                voiceOutput.addToQueue(INSTRUCTION(msg, 0, time.time()))
                 print(data['distance'], ' steps')
                 prevTotalDistance = data['distance']
             else:
@@ -265,54 +271,66 @@ def path_to_goal(nodeList, route, northAt):
                 msg = str(data['distance']) + ' steps'
                 # voiceOutput.addToQueue(INSTRUCTION(msg,0))
 
-        if time.time() - instructionTimeStamp > TTS_DELAY:
-            instructionTimeStamp = time.time()
-            audio = True
-        if time.time() - distanceTimeStamp > 2 * TTS_DELAY:
-            if not step:
-                if not audio:
-                    distanceTimeStamp = time.time()
-                    distanceAudio = True
+            if time.time() - instructionTimeStamp > TTS_DELAY:
+                instructionTimeStamp = time.time()
+                audio = True
+            if time.time() - distanceTimeStamp > 2 * TTS_DELAY:
+                if not step:
+                    if not audio:
+                        distanceTimeStamp = time.time()
+                        distanceAudio = True
 
-        distanceToNode = nodeToNode['distance'] - (data['distance']*60 - totalNodeDistance)
-        if distanceToNode <= 0:
-            break
-        turnAngle = nodeToNode['nodeBearing'] - data['direction'] + 20 #offset
-        if turnAngle > 180:
-            turnAngle -= 360
-        elif turnAngle <= -180:
-            turnAngle += 360
+            distanceToNode = nodeToNode['distance'] - (data['distance'] * STRIDE_LENGTH - totalNodeDistance)
+            if distanceToNode <= 0:
+                break
+            turnAngle = nodeToNode['nodeBearing'] - data['direction'] + 20 #offset
+            if turnAngle > 180:
+                turnAngle -= 360
+            elif turnAngle <= -180:
+                turnAngle += 360
             
-        if abs(turnAngle) > 20:
-            instruction = 'Turn ' + str(turnAngle)
-            to_user(instruction, audio)
-        else:
-            instruction = 'Walk ' + str(distanceToNode)
-            to_user(instruction, distanceAudio)
-#            instruction =  'Turn ' + str(turnAngle) + ' degrees and walk ' + str(distanceToNode) + ' cm'
-            
-                # text_to_speech(instruction)
-            
-            # direction = direction_for_user(displacement['turnAngle'])
-            # instruction = instruction_for_user(direction, displacement['distance'], nextNode.nodeId)
-            
-            # print instruction
-            # if readInstruction == 1:
-            #     text_to_speech(instruction)
-            
+            if abs(turnAngle) > 20:
+                instruction = 'Turn ' + str(turnAngle)
+                # to_user(instruction, audio)
+                print instruction
+                if not counter:
+                    voiceOutput.addToQueue(INSTRUCTION(instruction, 0, time.time()))
+                    counter += 1
+                else:
+                    counter = (counter + 1) % 4
+            else:
+                instruction = 'Walk ' + str(distanceToNode)
+                # to_user(instruction, distanceAudio)
+                print instruction
+                if not counterx:
+                    voiceOutput.addToQueue(INSTRUCTION(instruction, 0, time.time()))
+                    counterx += 1
+                else:
+                    counterx = (counterx + 1) % 4
+                # instruction =  'Turn ' + str(turnAngle) + ' degrees and walk ' + str(distanceToNode) + ' cm'
+                
+                    # text_to_speech(instruction)
+                
+                # direction = direction_for_user(displacement['turnAngle'])
+                # instruction = instruction_for_user(direction, displacement['distance'], nextNode.nodeId)
+                
+                # print instruction
+                # if readInstruction == 1:
+                #     text_to_speech(instruction)
+                
 
-            # position['x'] = int(raw_input('Current x: '))
-            # position['y'] = int(raw_input('Current y: '))
-            # position['heading'] = int(raw_input('Current heading: '))
-            # displacement = displacement_from_position(position, nextNode, northAt)
+                # position['x'] = int(raw_input('Current x: '))
+                # position['y'] = int(raw_input('Current y: '))
+                # position['heading'] = int(raw_input('Current heading: '))
+                # displacement = displacement_from_position(position, nextNode, northAt)
         reached_message = messages.REACHED_NEXT_NODE.format(id = str(nextNode.nodeId))
         totalNodeDistance += nodeToNode['distance']
         print reached_message
         # text_to_speech(reached_message)
-        voiceOutput.addToQueue(INSTRUCTION(reached_message, 0))
+        voiceOutput.addToQueue(INSTRUCTION(reached_message, 0, time.time()))
         previousNode = nextNode
     # text_to_speech('You have reached the final node')
-    voiceOutput.addToQueue(INSTRUCTION('You have reached the final node', 0))
+    voiceOutput.addToQueue(INSTRUCTION(messages.DESTINATION_REACHED, 0, time.time()))
 
 def to_user(instruction, audio):
     if instruction == '':
