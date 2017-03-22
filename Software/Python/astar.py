@@ -1,8 +1,8 @@
 from urllib2 import urlopen
-from Firmware_Receiver import SerialCommunicator
-from Firmware_Receiver import Arduino
-# from Firmware_Dummy import SerialCommunicator
-# from Firmware_Dummy import Arduino
+# from Firmware_Receiver import SerialCommunicator
+# from Firmware_Receiver import Arduino
+from Firmware_Dummy import SerialCommunicator
+from Firmware_Dummy import Arduino
 import pyttsx
 import json 
 import heapq
@@ -11,6 +11,7 @@ from stepCounter import read_step_counter
 import time
 import os
 import threading
+import messages
 from voiceThread import VoiceHandler
 from voiceThread import INSTRUCTION
 
@@ -32,7 +33,11 @@ def main():
     # Text input mode for new maps
     info = None
     while info is None:
+        # text_to_speech(messages.INPUT_BUILDING_NUMBER)
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, 0))
         buildingNameOrNumber = str(raw_input('Building name or number: '))
+        # text_to_speech(messages.INPUT_BUILDING_LEVEL)        
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, 0))
         floorNumber = raw_input('Floor number: ')
 
         jsonmap = get_json(buildingNameOrNumber, floorNumber)
@@ -55,11 +60,16 @@ def main():
     while True:
         try:
             print buildingName + ' Floor ' + str(floorNumber) + ' has node IDs from 1 to ' + str(len(nodeList))
+            # text_to_speech(messages.INPUT_START_NODE)
+            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, 0))
             startNode = nodeList[int(raw_input('Start node ID: '))-1]
+            # text_to_speech(messages.INPUT_END_NODE)
+            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, 0))
             goalNode = nodeList[int(raw_input('Goal node ID: '))-1]
         except IndexError:
-            print('One or more node IDs are out of range')
+            print(messages.OUT_OF_RANGE)
             newline()
+            text_to_speech(messages.OUT_OF_RANGE)
             pass
         else:
             break
@@ -252,7 +262,7 @@ def path_to_goal(nodeList, route, northAt):
                 # text_to_speech(str(data['distance']) + ' steps')
                 msg = str(data['distance']) + ' steps'
                 voiceOutput.addToQueue(INSTRUCTION(msg,0))
-            time.sleep(1)
+            time.sleep(5)
 
         if time.time() - instructionTimeStamp > TTS_DELAY:
             instructionTimeStamp = time.time()
@@ -294,7 +304,7 @@ def path_to_goal(nodeList, route, northAt):
             # position['y'] = int(raw_input('Current y: '))
             # position['heading'] = int(raw_input('Current heading: '))
             # displacement = displacement_from_position(position, nextNode, northAt)
-        reached_message = 'You have reached node ID ' + str(nextNode.nodeId)
+        reached_message = messages.REACHED_NEXT_NODE.format(id = str(nextNode.nodeId))
         totalNodeDistance += nodeToNode['distance']
         print reached_message
         # text_to_speech(reached_message)
@@ -412,10 +422,6 @@ def request_data_from_arduino():
 #     return floorNumber
 
 def text_to_speech(text):
-    # For testing on Chris' mac
-    # print 'Text-to-speech goes here'
-    # engine.say(text)
-    # engine.runAndWait()
     os.system("espeak '{msg}' 2>/dev/null".format(msg = text))
 
 def newline():
@@ -424,5 +430,6 @@ def newline():
 # def mean(list):
 #     return float(sum(list)) / max(len(list), 1)
 
-text_to_speech('R pi started and program initialising')
+text_to_speech(messages.PROGRAM_INIT)
+# voiceOutput.addToQueue(INSTRUCTION(messages.PROGRAM_INIT, 0))
 main()

@@ -21,7 +21,7 @@ class INSTRUCTION:
         return self.p < other.p
 
     def __eq__(self, other):
-        '''Return true if both instructions have the same p'''
+        '''Return true if both INSTRUCTION have the same p'''
         return self.p == other.p
 	
 class VoiceHandler:
