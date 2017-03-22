@@ -4,39 +4,33 @@ import time
 import subprocess
 # import signal
 import os
+import contants
 from Queue import Queue
-from Queue import PriorityQueue
 
 ttsTemplate = "espeak -s150 '{msg}' 2>/dev/null"
-SPEECH_DELAY = 0.5
 
 class INSTRUCTION:
     '''Used instead of string to make comparable for priority queue'''
-    def __init__(self, m, p, t):
+    def __init__(self, message, priority):
         '''Initialise instruction'''
-        self.m = str(m)
-        self.p = int(p)
-        self.t = float(t)
+        self.message = str(message)
+        self.priority = int(priority)
         
     def __lt__(self, other):
         '''Return true if self instruction has smaller p than other instruction'''
-        if self.p == other.p:
-            return self.t < other.t
-        return self.p < other.p
+        return self.priority < other.priority
 
     def __eq__(self, other):
         '''Return true if both instructions have the same p'''
-        if self.p == other.p:
-            return self.t == other.t
-        return self.p == other.p
-	
+        return self.priority == other.priority
+
 class VoiceHandler:
     def __init__(self):
         self.voiceLock = threading.Lock()
 #         self.voiceQueue = Queue()
-        self.voiceQueue = PriorityQueue()
+        self.voiceQueue = Queue()
         self.lastProcess = None
-        self.previousMessage = ''
+        self.previousInstruction = INSTRUCTION('', constants.USELESS)
 
     #########################
     # Main voice loop
@@ -53,7 +47,7 @@ class VoiceHandler:
                 message = self.voiceQueue.get().message
                 self.sayMessage(message)
             self.voiceLock.release()
-            time.sleep(SPEECH_DELAY)
+            time.sleep(constants.SPEECH_DELAY)
 
     #########################
     # Helper functions
@@ -63,10 +57,14 @@ class VoiceHandler:
         if self.voiceQueue.empty():
             print 'queue empty.'
             self.voiceQueue.put(instruction)
-            self.previousMessage = instruction
-        else:
+            self.previousInstruction = instruction
+        elif self.previousInstruction.priority == instruction.priority and self.previousInstruction.message != instruction.message:
             self.voiceQueue.put(instruction)
-            self.previousMessage = instruction
+            self.previousInstruction = instruction
+        elif self.previousInstruction.priority > instruction.priority and self.previousInstruction.message != instruction.message:
+            self.voiceQueue.queue.clear()
+            self.voiceQueue.put(instruction)
+            self.previousInstruction = instruction
         self.voiceLock.release()
 
     def sayMessage(self, message):
