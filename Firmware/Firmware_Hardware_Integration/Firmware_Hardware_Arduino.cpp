@@ -313,7 +313,7 @@ void calibrate() {
 
 void getAccelReadings(void *p) {
 	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+		//xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
 		int prevSample = xSampleNew; //Get previous reading
 		readAltimu();
@@ -355,8 +355,8 @@ void getAccelReadings(void *p) {
 		//}
 
 		lastDistanceTaken += distanceTaken;
-		xSemaphoreGive(xSemaphore);
-		vTaskDelay(1);
+		//xSemaphoreGive(xSemaphore);
+		vTaskDelay(5);
 	}
 }
 
@@ -395,7 +395,7 @@ void getAccelReadings(void *p) {
 
 void getSensorReadings(void *p) {
 	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+		//xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
 		readSensor(0);
 		readSensor(1);
@@ -403,37 +403,46 @@ void getSensorReadings(void *p) {
 		readSensor(3);
 		readSensor(4);
 
-		xSemaphoreGive(xSemaphore);
+		//xSemaphoreGive(xSemaphore);
 		vTaskDelay(25);
 	}
 }
 
+static void serialFlush(){
+	 while(Serial.available() > 0) {
+	    char t = Serial.read();
+	  }
+	 while(Serial1.available() > 0) {
+	    char t = Serial.read();
+	  }
+}
+
 //  ===============================  Firmware Functions  ===============================
-//static void initialize() {
-//	bool initFlag = true;
-//
-//	while (initFlag) {
-//		if (Serial1.available()) {
-//			int msg = Serial1.read();
-//			Serial.println((char) msg);
-//			Serial.println("1");
-//			if (msg == 'h') {
-//				Serial.println("2");
-//				msg = 'a';
-//				Serial1.write(msg);
-//				Serial.println("3");
-//				Serial.println((char) msg);
-//				if (msg == 'a') {
-//					initFlag = false;
-//					//Serial.println("2");
-//				} else{
-//					Serial.print("error 3: ");
-//					Serial.println(msg);
-//				}
-//			}
-//		}
-//	}
-//}
+static void initialize() {
+	bool initFlag = true;
+
+	while (initFlag) {
+		if (Serial1.available()) {
+			int msg = Serial1.read();
+			Serial.println((char) msg);
+			Serial.println("1");
+			if (msg == 'h') {
+				Serial.println("2");
+				msg = 'a';
+				Serial1.write(msg);
+				Serial.println("3");
+				Serial.println((char) msg);
+				if (msg == 'a') {
+					initFlag = false;
+					//Serial.println("2");
+				} else{
+					Serial.print("error 3: ");
+					Serial.println(msg);
+				}
+			}
+		}
+	}
+}
 
 
 //// Firmware Testing
@@ -461,7 +470,7 @@ void getSensorReadings(void *p) {
 void transmitStepCountData(void *p) {
 	int i = 0;
 	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
+		//xSemaphoreTake(xSemaphore, portMAX_DELAY);
 		isSendingData = true;
 
 		int distanceToTransmit = 0;
@@ -473,7 +482,7 @@ void transmitStepCountData(void *p) {
 		JsonObject& json = jsonBuffer.createObject();
 		json["direction"] = lastKnownDirection;
 		json["distance"] = numStepsTaken;
-		long checksum = (lastKnownDirection + totalDist) % 256;//### Must make rPi recompute checksum too
+		long checksum = (lastKnownDirection + numStepsTaken) % 256;//### Must make rPi recompute checksum too
 		json["checksum"] = checksum;
 
 		Serial.print("numStepsTaken: ");
@@ -504,6 +513,8 @@ void transmitStepCountData(void *p) {
 
 		json.printTo(Serial1);
 		Serial1.println("");
+		json.printTo(Serial);
+		Serial.println("");
 
 		// Might have issues if transmit is at higher priority
 		// than getReadings.
@@ -523,8 +534,8 @@ void transmitStepCountData(void *p) {
 			//sc_pos_json = sc_pos_backup;
 		}
 
-		xSemaphoreGive(xSemaphore);
-		vTaskDelay(25);
+		//xSemaphoreGive(xSemaphore);
+		vTaskDelay(50);
 	}
 }
 
@@ -535,6 +546,8 @@ void setup() {
 
 	Serial.begin(9600);
 	Serial1.begin(9600);
+
+	serialFlush();
 
 //  ===============================  Setup Hardware Connection  ===============================
 	Serial.println("Initializing Hardware!");
@@ -575,18 +588,16 @@ void setup() {
 	calibrate();
 
 //  ===============================  Create Hardware Tasks  ===============================
-	xTaskCreate(getAccelReadings, "getAccelReadings", 3*STACK_SIZE, NULL, 1, NULL);
-	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 1, NULL);
+	xTaskCreate(getAccelReadings, "getAccelReadings", 3*STACK_SIZE, NULL, 3, NULL);
+	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 3, NULL);
 //	xTaskCreate(getSensor1Readings, "getSensor1Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 //	xTaskCreate(getSensor2Readings, "getSensor2Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 //	xTaskCreate(getSensor3Readings, "getSensor3Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 
 //  ===============================  Setup Firmware Connection  ===============================
-	Serial.flush();
-	Serial1.flush();
 
 	Serial.println("Begin Arduino-Pi Connection");
-//	initialize();
+	initialize();
 	Serial.println("Connection Established. Sending data from Arduino to Pi.");
 
 //  ===============================  Create Firmware Tasks  ===============================
