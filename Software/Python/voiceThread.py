@@ -8,6 +8,7 @@ from Queue import Queue
 from Queue import PriorityQueue
 
 ttsTemplate = "espeak -s150 '{msg}' 2>/dev/null"
+SPEECH_DELAY = 1
 
 class INSTRUCTION:
     '''Used instead of string to make comparable for priority queue'''
@@ -21,7 +22,7 @@ class INSTRUCTION:
         return self.p < other.p
 
     def __eq__(self, other):
-        '''Return true if both INSTRUCTION have the same p'''
+        '''Return true if both instructions have the same p'''
         return self.p == other.p
 	
 class VoiceHandler:
@@ -47,7 +48,7 @@ class VoiceHandler:
                 message = self.voiceQueue.get().message
                 self.sayMessage(message)
             self.voiceLock.release()
-            time.sleep(3)
+            time.sleep(SPEECH_DELAY)
 
     #########################
     # Helper functions

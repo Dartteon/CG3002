@@ -1,8 +1,8 @@
 from urllib2 import urlopen
-# from Firmware_Receiver import SerialCommunicator
-# from Firmware_Receiver import Arduino
-from Firmware_Dummy import SerialCommunicator
-from Firmware_Dummy import Arduino
+from Firmware_Receiver import SerialCommunicator
+from Firmware_Receiver import Arduino
+# from Firmware_Dummy import SerialCommunicator
+# from Firmware_Dummy import Arduino
 import pyttsx
 import json 
 import heapq
@@ -231,7 +231,8 @@ def path_to_goal(nodeList, route, northAt):
     previousNode = nodeList[route[index]-1]
     goalNode = nodeList[route[len(route)-1]-1]
     position = {'x':nodeList[route[index]-1].x, 'y':nodeList[route[index]-1].y, 'heading':0}
-    #arduino.handshakeWithArduino()
+    serial.serialFlush()
+    arduino.handshakeWithArduino()
     while previousNode is not goalNode:
         index += 1
         nextNode = nodeList[route[index]-1]
@@ -254,6 +255,7 @@ def path_to_goal(nodeList, route, northAt):
                 step = True
                 # text_to_speech(str(data['distance']) + ' steps')
                 msg = str(data['distance']) + ' steps'
+                prevStepsTaken = data['distance']
                 voiceOutput.addToQueue(INSTRUCTION(msg, 0))
                 print(data['distance'], ' steps')
                 prevTotalDistance = data['distance']
@@ -261,8 +263,7 @@ def path_to_goal(nodeList, route, northAt):
                 print(data['distance'], ' steps')
                 # text_to_speech(str(data['distance']) + ' steps')
                 msg = str(data['distance']) + ' steps'
-                voiceOutput.addToQueue(INSTRUCTION(msg,0))
-            time.sleep(5)
+                # voiceOutput.addToQueue(INSTRUCTION(msg,0))
 
         if time.time() - instructionTimeStamp > TTS_DELAY:
             instructionTimeStamp = time.time()
