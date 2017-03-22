@@ -42,6 +42,7 @@ L3G gyro;
 
 long duration, distance, rightArmSensor, frontSensor, leftArmSensor,
 		leftLegSensor, rightLegSensor;
+int sensorCounter = 0;
 int DIST_THRESHOLD_SIDES = 50;
 int DIST_THRESHOLD_MID = 50;
 int DURATION_TIMEOUT_SENSOR = 3000;
@@ -395,16 +396,13 @@ void getAccelReadings(void *p) {
 
 void getSensorReadings(void *p) {
 	for (;;) {
-		//xSemaphoreTake(xSemaphore, portMAX_DELAY);
+		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
-		readSensor(0);
-		readSensor(1);
-		readSensor(2);
-		readSensor(3);
-		readSensor(4);
+		readSensor(sensorCounter);
+		sensorCounter = (sensorCounter + 1) % 5;
 
-		//xSemaphoreGive(xSemaphore);
-		vTaskDelay(25);
+		xSemaphoreGive(xSemaphore);
+		vTaskDelay(5);
 	}
 }
 
