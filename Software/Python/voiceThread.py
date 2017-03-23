@@ -7,7 +7,7 @@ import os
 import constants
 from Queue import Queue
 
-ttsTemplate = "espeak -s150 '{msg}' 2>/dev/null"
+ttsTemplate = "espeak -s 150 -v en+f3 '{msg}' 2>/dev/null"
 
 class INSTRUCTION:
     '''Used instead of string to make comparable for priority queue'''
