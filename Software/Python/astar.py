@@ -294,7 +294,7 @@ def path_to_goal(nodeList, route, northAt):
                 # to_user(instruction, audio)
                 print instruction
                 if not counter:
-                    voiceOutput.addToQueue(INSTRUCTION(instruction, constants.LOW_PRIORITY))
+                    voiceOutput.addToQueue(INSTRUCTION(instruction, constants.LOW_PRIORITgY))
                     counter += 1
                 else:
                     counter = (counter + 1) % 4
