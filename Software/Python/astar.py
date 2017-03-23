@@ -12,11 +12,11 @@ import time
 import os
 import threading
 import messages
+import constants
 from voiceThread import VoiceHandler
 from voiceThread import INSTRUCTION
 
 TTS_DELAY = 3.5 # Text to speech delay in seconds
-STRIDE_LENGTH = 60 # Stride length in cm
 
 # Base URL for map info download
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
@@ -247,7 +247,7 @@ def path_to_goal(nodeList, route, northAt):
         nextNode = nodeList[route[index]-1]
         # displacement = displacement_from_position(position, nextNode, northAt)
         nodeToNode = path_to_node(nextNode, previousNode, northAt)
-        print 'calculate node to node'
+        # print 'calculate node to node'
         # If the user is within 20cm to the next node, we will take it as they have reached that node
 
         # while distanceToNode['distance'] > 20:
@@ -284,7 +284,13 @@ def path_to_goal(nodeList, route, northAt):
                         distanceTimeStamp = time.time()
                         distanceAudio = True
 
-            distanceToNode = nodeToNode['distance'] - (data['distance'] * STRIDE_LENGTH - totalNodeDistance)
+            distanceToNode = nodeToNode['distance'] - (data['distance'] * constants.STRIDE_LENGTH - totalNodeDistance)
+            if distanceToNode < constants.STRIDE_LENGTH:
+                print str(float(distanceToNode/constants.STRIDE_LENGTH))
+                stepsToNode = round(float(distanceToNode/constants.STRIDE_LENGTH), 1)
+            else:
+                stepsToNode = int(distanceToNode/constants.STRIDE_LENGTH)
+
             if distanceToNode <= 0:
                 break
             turnAngle = nodeToNode['nodeBearing'] - data['direction'] + 20 #offset
@@ -303,7 +309,8 @@ def path_to_goal(nodeList, route, northAt):
                 else:
                     counter = (counter + 1) % 4
             else:
-                instruction = 'Walk ' + str(distanceToNode)
+                instruction = 'Walk ' + str(stepsToNode)
+                print str(distanceToNode)
                 # to_user(instruction, distanceAudio)
                 print instruction
                 if not counterx:
