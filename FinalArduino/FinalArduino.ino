@@ -99,32 +99,6 @@ long od_timestamp_value = 0;
 
 boolean isSendingData = false;
 
-typedef struct stepCountStorageStrt {
-	volatile int direction = 0;
-	volatile float distance = 0;
-} StepCountStorage;
-
-typedef struct backupStepCountStorageStrt {
-	volatile int direction;
-	volatile float distance;
-} BackupStepCountStorage;
-
-typedef struct obstDetectionStrt {
-	int dist1[MAX_STORAGE_SIZE]; // Distance from Sensor 1 (Left Arm)
-	int dist2[MAX_STORAGE_SIZE]; // Distance from Sensor 2 (Wand)
-	int dist3[MAX_STORAGE_SIZE]; // Distance from Sensor 3 (Right Arm)
-	long timestamp[MAX_STORAGE_SIZE];
-} ObstDetectionStorage;
-
-StepCountStorage stepCountStorage;
-ObstDetectionStorage obstDetectionStorage;
-
-int sc_pos_packet = 0;
-int sc_pos_json = 0;
-
-int od_pos_packet = 0;
-int od_pos_json = 0;
-
 SemaphoreHandle_t xSemaphore = NULL;
 
 QueueHandle_t xQueue = NULL;
