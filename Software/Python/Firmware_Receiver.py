@@ -77,7 +77,7 @@ class SerialCommunicator():
                 if msg == 'n':
                     print ('fail packet')
             print('Timeout serialRead')
-			print('Initializing Handshake Sequence')
+            print('Initializing Handshake Sequence')
             self.handshakeWithArduino()
 
     def serial(self):
