@@ -4,7 +4,7 @@ import time
 import subprocess
 # import signal
 import os
-import contants
+import constants
 from Queue import Queue
 
 ttsTemplate = "espeak -s150 '{msg}' 2>/dev/null"

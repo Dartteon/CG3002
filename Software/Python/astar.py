@@ -37,10 +37,10 @@ def main():
     info = None
     while info is None:
         # text_to_speech(messages.INPUT_BUILDING_NUMBER)
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, 0))
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, constants.HIGH_PRIORITY))
         buildingNameOrNumber = str(raw_input('Building name or number: '))
         # text_to_speech(messages.INPUT_BUILDING_LEVEL)        
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, 0))
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, constants.HIGH_PRIORITY))
         floorNumber = raw_input('Floor number: ')
 
         jsonmap = get_json(buildingNameOrNumber, floorNumber)
@@ -64,10 +64,10 @@ def main():
         try:
             print buildingName + ' Floor ' + str(floorNumber) + ' has node IDs from 1 to ' + str(len(nodeList))
             # text_to_speech(messages.INPUT_START_NODE)
-            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, 0))
+            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, constants.HIGH_PRIORITY))
             startNode = nodeList[int(raw_input('Start node ID: '))-1]
             # text_to_speech(messages.INPUT_END_NODE)
-            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, 0))
+            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, constants.HIGH_PRIORITY))
             goalNode = nodeList[int(raw_input('Goal node ID: '))-1]
         except IndexError:
             print(messages.OUT_OF_RANGE)
@@ -262,7 +262,7 @@ def path_to_goal(nodeList, route, northAt):
                 # text_to_speech(str(data['distance']) + ' steps')
                 msg = str(data['distance']) + ' steps'
                 prevStepsTaken = data['distance']
-                voiceOutput.addToQueue(INSTRUCTION(msg, 0))
+                voiceOutput.addToQueue(INSTRUCTION(msg, constants.HIGH_PRIORITY))
                 print(data['distance'], ' steps')
                 prevTotalDistance = data['distance']
             else:
@@ -294,7 +294,7 @@ def path_to_goal(nodeList, route, northAt):
                 # to_user(instruction, audio)
                 print instruction
                 if not counter:
-                    voiceOutput.addToQueue(INSTRUCTION(instruction, 0))
+                    voiceOutput.addToQueue(INSTRUCTION(instruction, constants.LOW_PRIORITY))
                     counter += 1
                 else:
                     counter = (counter + 1) % 4
@@ -303,7 +303,7 @@ def path_to_goal(nodeList, route, northAt):
                 # to_user(instruction, distanceAudio)
                 print instruction
                 if not counterx:
-                    voiceOutput.addToQueue(INSTRUCTION(instruction, 0))
+                    voiceOutput.addToQueue(INSTRUCTION(instruction, constants.LOWEST_PRIORITY))
                     counterx += 1
                 else:
                     counterx = (counterx + 1) % 4
@@ -327,10 +327,10 @@ def path_to_goal(nodeList, route, northAt):
         totalNodeDistance += nodeToNode['distance']
         print reached_message
         # text_to_speech(reached_message)
-        voiceOutput.addToQueue(INSTRUCTION(reached_message, 0))
+        voiceOutput.addToQueue(INSTRUCTION(reached_message, constants.MED_PRIORITY))
         previousNode = nextNode
     # text_to_speech('You have reached the final node')
-    voiceOutput.addToQueue(INSTRUCTION(messages.DESTINATION_REACHED, 0))
+    voiceOutput.addToQueue(INSTRUCTION(messages.DESTINATION_REACHED, constants.MED_PRIORITY))
 
 def to_user(instruction, audio):
     if instruction == '':
