@@ -4,7 +4,7 @@ from Firmware_Receiver import Arduino
 # from Firmware_Dummy import SerialCommunicator
 # from Firmware_Dummy import Arduino
 import pyttsx
-import json 
+import json
 import heapq
 import math
 from stepCounter import read_step_counter
@@ -39,7 +39,7 @@ def main():
         # text_to_speech(messages.INPUT_BUILDING_NUMBER)
         voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, constants.HIGH_PRIORITY))
         buildingNameOrNumber = str(raw_input('Building name or number: '))
-        # text_to_speech(messages.INPUT_BUILDING_LEVEL)        
+        # text_to_speech(messages.INPUT_BUILDING_LEVEL)
         voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, constants.HIGH_PRIORITY))
         floorNumber = raw_input('Floor number: ')
 
@@ -106,7 +106,7 @@ def main():
                     nodeList[nodeId-1].parent = currentNode.nodeId
                     nodeList[nodeId-1].g = gTemp
                     heapq.heappush(openList, nodeList[nodeId-1])
-            
+
         closedList.append(currentNode)
 
     route = get_route(goalNode, nodeList)
@@ -114,7 +114,7 @@ def main():
     print 'Route is: ' + str(route)
 
     path_to_goal(nodeList, route, northAt)
-    
+
 class NODE:
     '''Used instead of map data for ease of use'''
     def __init__(self, nodeId, x, y, nodeName, linkTo):
@@ -128,7 +128,7 @@ class NODE:
         self._g = 0
         self._h = 0
         self.parent = None
-        
+
     def __lt__(self, other):
         '''Return true if self node has smaller f than other node'''
         return self.f < other.f
@@ -136,41 +136,37 @@ class NODE:
     def __eq__(self,other):
         '''Return true if both nodes have the same node ID'''
         return self.nodeId == other.nodeId
-    
+
     @property
     def f(self):
         '''Returns private f value'''
         return self._f
-    
+
     @property
     def g(self):
         '''Returns private g value'''
         return self._g
-    
+
     @g.setter
     def g(self, cost):
         '''Sets private g value and update private f value'''
         self._g = cost
         self._f = cost + self.h
-        
+
     @property
     def h(self):
         '''Returns private h value'''
         return self._h
-    
+
     @h.setter
     def h(self, heuristic):
         '''Sets private h value and update private f value'''
         self._h = heuristic
         self._f = self.g + heuristic
-        
+
 def get_json(buildingName, floorNumber):
     '''Returns map data from building name and floor number'''
     try:
-        fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
-        with open(fileName, 'r') as file:
-            data = json.load(file)
-    except Exception as e:
         url = base_url % (buildingName, floorNumber)
         response = urlopen(url)
         data = json.loads(response.read())
@@ -179,6 +175,14 @@ def get_json(buildingName, floorNumber):
             fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
             with open(fileName, 'w') as file:
                 json.dump(data, file)
+    except Exception as e:
+        print e
+        try:
+            fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
+            with open(fileName, 'r') as file:
+                data = json.load(file)
+        except Exception as e:
+            print e
     return data
 
 def heuristic(goalNode, nodeList):
@@ -245,7 +249,7 @@ def path_to_goal(nodeList, route, northAt):
         nodeToNode = path_to_node(nextNode, previousNode, northAt)
         print 'calculate node to node'
         # If the user is within 20cm to the next node, we will take it as they have reached that node
-        
+
         # while distanceToNode['distance'] > 20:
         instruction = ''
         instructionTimeStamp = 0.0
@@ -288,7 +292,7 @@ def path_to_goal(nodeList, route, northAt):
                 turnAngle -= 360
             elif turnAngle <= -180:
                 turnAngle += 360
-            
+
             if abs(turnAngle) > 20:
                 instruction = 'Turn ' + str(turnAngle)
                 # to_user(instruction, audio)
@@ -308,16 +312,16 @@ def path_to_goal(nodeList, route, northAt):
                 else:
                     counterx = (counterx + 1) % 4
                 # instruction =  'Turn ' + str(turnAngle) + ' degrees and walk ' + str(distanceToNode) + ' cm'
-                
+
                     # text_to_speech(instruction)
-                
+
                 # direction = direction_for_user(displacement['turnAngle'])
                 # instruction = instruction_for_user(direction, displacement['distance'], nextNode.nodeId)
-                
+
                 # print instruction
                 # if readInstruction == 1:
                 #     text_to_speech(instruction)
-                
+
 
                 # position['x'] = int(raw_input('Current x: '))
                 # position['y'] = int(raw_input('Current y: '))
@@ -413,7 +417,7 @@ def request_data_from_arduino():
 
 # def int_to_buildingName():
 #     buildingNameList = ['DemoBuilding', 'COM1', 'COM2']
-#     number = 0        
+#     number = 0
 #     while (number - 1) not in range(len(buildingNameList)):
 #         try:
 #             print('Building?\n1: DemoBuilding\n2: COM1\n3: COM2')
@@ -427,7 +431,7 @@ def request_data_from_arduino():
 
 # def int_to_floorNumber(buildingName):
 #     floorNumberList = {'DemoBuilding':[1, 2, 3], 'COM1':[1, 2], 'COM2':[2, 3]}
-#     floorNumber= 0    
+#     floorNumber= 0
 #     while floorNumber not in floorNumberList[buildingName]:
 #         try:
 #             print 'Floor number?'
