@@ -4,6 +4,7 @@ import json
 import traceback
 
 class Arduino():
+    #deprecated
     def handshakeWithArduino(self):
         print ('start handshake')
         serial = SerialCommunicator()
@@ -22,25 +23,34 @@ class Arduino():
 class SerialCommunicator():
     serial1 = serial.Serial('/dev/serial0',9600,timeout=5)
     def __init__(self):
-        # initialise serial port with Arduino
-        # self.serial1 = serial.Serial('/dev/serial0',9600,timeout=0.01)
         if not self.serial1.isOpen():
             self.serial1.open()
-
-    def serialWrite(self, message_str):
-        self.ser.write(message_str)
-        return
 
     def serialFlush(self):
         while self.serial1.inWaiting():
             readings = self.serial1.read()
 
+    def handshakeWithArduino(self):
+        print ('Start handshake')
+        initFlag = True
+        while initFlag:
+            msg = "h"
+            self.serial1.write(msg)
+            msg = self.serial1.read()
+            print(msg)
+            if (msg == "a"):
+                msg2 = 'a'
+                self.serial1.write(msg2)
+                initFlag = False
+                return
+            print('Timeout Handshake')
+        print ('End handshake')
+
+
     def serialRead(self):
         dataFlag = False
-        #print ('start reading')
         while not dataFlag:
-            serial1 = serial.Serial('/dev/serial0',9600,timeout=5)
-            readings = serial1.readline()
+            readings = self.serial1.readline()
             if readings:
                 msg = 'n'
                 print(readings)
@@ -58,16 +68,17 @@ class SerialCommunicator():
                         dataFlag = True
                     print(jsonO['checksum'])
                     print(checksumPi)
+                    self.serial1.write(msg)
+                    return jsonO
                 except:
                     traceback.print_exc()
                     #print(readings)
-                serial1.write(msg)
-                
+                self.serial1.write(msg)
                 if msg == 'n':
                     print ('fail packet')
-                    #print(readings) 
-            return jsonO
-            print('Timeout')
+            print('Timeout serialRead')
+			print('Initializing Handshake Sequence')
+            self.handshakeWithArduino()
 
     def serial(self):
         return serial1

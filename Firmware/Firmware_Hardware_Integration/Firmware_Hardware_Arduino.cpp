@@ -42,7 +42,6 @@ L3G gyro;
 
 long duration, distance, rightArmSensor, frontSensor, leftArmSensor,
 		leftLegSensor, rightLegSensor;
-int sensorCounter = 0;
 int DIST_THRESHOLD_SIDES = 50;
 int DIST_THRESHOLD_MID = 50;
 int DURATION_TIMEOUT_SENSOR = 3000;
@@ -361,47 +360,13 @@ void getAccelReadings(void *p) {
 	}
 }
 
-//void getSensor1Readings(void *p) {
-//	for (;;) {
-//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-//
-//		readSensor(0);
-//
-//		xSemaphoreGive(xSemaphore);
-//		vTaskDelay(25);
-//	}
-//}
-//
-//void getSensor2Readings(void *p) {
-//	for (;;) {
-//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-//
-//		readSensor(1);
-//
-//		xSemaphoreGive(xSemaphore);
-//		vTaskDelay(25);
-//	}
-//}
-//
-//void getSensor3Readings(void *p) {
-//	for (;;) {
-//		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-//
-//		readSensor(2);
-//
-//		xSemaphoreGive(xSemaphore);
-//		vTaskDelay(25);
-//	}
-//}
-
 void getSensorReadings(void *p) {
+	int sensorCounter = 0;
 	for (;;) {
-		xSemaphoreTake(xSemaphore, portMAX_DELAY);
-
+		//xSemaphoreTake(xSemaphore, portMAX_DELAY);
 		readSensor(sensorCounter);
 		sensorCounter = (sensorCounter + 1) % 5;
-
-		xSemaphoreGive(xSemaphore);
+		//xSemaphoreGive(xSemaphore);
 		vTaskDelay(5);
 	}
 }
@@ -418,26 +383,34 @@ static void serialFlush(){
 //  ===============================  Firmware Functions  ===============================
 static void initialize() {
 	bool initFlag = true;
-
+	serialFlush();
 	while (initFlag) {
-		if (Serial1.available()) {
-			int msg = Serial1.read();
-			Serial.println((char) msg);
-			Serial.println("1");
-			if (msg == 'h') {
-				Serial.println("2");
-				msg = 'a';
-				Serial1.write(msg);
-				Serial.println("3");
-				Serial.println((char) msg);
-				if (msg == 'a') {
-					initFlag = false;
-					//Serial.println("2");
-				} else{
-					Serial.print("error 3: ");
-					Serial.println(msg);
-				}
-			}
+
+		Serial.println("Expecting 'h'");
+		while (!Serial1.available()){
+		}
+		int msg = Serial1.read();
+		Serial.println((char) msg);
+		if (msg == 'h') {
+			msg = 'a';
+			Serial1.write(msg);
+		}
+		else{
+			Serial.println("Unexpected handshake protocol sequence, forced bypass");
+			msg = 'a';
+			Serial1.write(msg);
+		}
+
+		Serial.println("Expecting 'a'");
+		while (!Serial1.available()){
+		}
+		msg = Serial1.read();
+		Serial.println((char) msg);
+		if (msg == 'a') {
+			initFlag = false;
+		} else{
+			Serial.println("Unexpected handshake protocol sequence, forced bypass");
+			initFlag = false;
 		}
 	}
 }
@@ -486,27 +459,7 @@ void transmitStepCountData(void *p) {
 		Serial.print("numStepsTaken: ");
 		Serial.println(numStepsTaken);
 
-		/* JsonArray& dir = json.createNestedArray("dir");
-		 JsonArray& accelx = json.createNestedArray("accelx");
-		 JsonArray& accely = json.createNestedArray("accely");
-		 JsonArray& accelz = json.createNestedArray("accelz");
-		 JsonArray& timestamp = json.createNestedArray("timestamp");
-		 long checksum = 0;
-
-		 for (i = 0; (sc_pos_json != sc_pos_packet) && (i < MAX_SENDING_PACKET_SIZE); i++) {
-		 dir.add(stepCountStorage.dir[sc_pos_json]);
-		 accelx.add(stepCountStorage.accelx[sc_pos_json]);
-		 accely.add(stepCountStorage.accely[sc_pos_json]);
-		 accelz.add(stepCountStorage.accelz[sc_pos_json]);
-		 timestamp.add(stepCountStorage.timestamp[sc_pos_json]);
-		 checksum = (checksum + stepCountStorage.timestamp[sc_pos_json]) %256;
-		 sc_pos_json = (sc_pos_json + 1) % MAX_STORAGE_SIZE;
-		 } */
-
-		// Might have issues if transmit is at higher priority
-		// than getReadings.
 		while(!Serial1){
-
 		}
 
 		json.printTo(Serial1);
@@ -514,21 +467,21 @@ void transmitStepCountData(void *p) {
 		json.printTo(Serial);
 		Serial.println("");
 
-		// Might have issues if transmit is at higher priority
-		// than getReadings.
 		while (!(Serial1 && Serial1.available())){
-
 		}
-
 		if (Serial1.available()){
 			char msg = Serial1.read();
+			Serial.println(msg);
 			if (msg =='n'){
 				//sc_pos_json = sc_pos_backup;
 			}
-			Serial.println(msg);
+			if (msg =='h'){
+				Serial.println("Received handshake msg, switching to handshake protocol");
+				initialize();
+			}
 		}
 		else {
-			Serial.println("error");
+			Serial.println("unexpected error in transmitData");
 			//sc_pos_json = sc_pos_backup;
 		}
 
@@ -545,7 +498,7 @@ void setup() {
 	Serial.begin(9600);
 	Serial1.begin(9600);
 
-	serialFlush();
+
 
 //  ===============================  Setup Hardware Connection  ===============================
 	Serial.println("Initializing Hardware!");
@@ -588,9 +541,6 @@ void setup() {
 //  ===============================  Create Hardware Tasks  ===============================
 	xTaskCreate(getAccelReadings, "getAccelReadings", 3*STACK_SIZE, NULL, 3, NULL);
 	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 3, NULL);
-//	xTaskCreate(getSensor1Readings, "getSensor1Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
-//	xTaskCreate(getSensor2Readings, "getSensor2Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
-//	xTaskCreate(getSensor3Readings, "getSensor3Readings", STACK_SIZE, NULL, 2, NULL); // Use only if getSensorReadings is not working
 
 //  ===============================  Setup Firmware Connection  ===============================
 
