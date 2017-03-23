@@ -13,6 +13,8 @@
 LSM303 compass;
 L3G gyro;
 
+bool DEBUG_ARDUINO_ONLY = true;
+
 //  ============================  Hardware Variables ============================
 // Ultrasound Sensors
 // Left Arm
@@ -517,14 +519,17 @@ void setup() {
 	xTaskCreate(getSensorReadings, "getSensorReadings", STACK_SIZE, NULL, 3, NULL);
 
 //  ===============================  Setup Firmware Connection  ===============================
-
+    if (!DEBUG_ARDUINO_ONLY) {
 	Serial.println("Begin Arduino-Pi Connection");
-	initialize();
+	    initialize();
 	Serial.println("Connection Established. Sending data from Arduino to Pi.");
+    } else {
+        Serial.println("Arduino in testing mode - skipping handshake with Pi");
+    }
 
 //  ===============================  Create Firmware Tasks  ===============================
 //	xTaskCreate(addStepCountDataDebug, "addStepCountData", STACK_SIZE, NULL, 1, NULL); // Debugging Purpose
-	xTaskCreate(transmitStepCountData, "transmitStepCountData", STACK_SIZE, NULL, 2, NULL); // Keep Transmit at Lower Priority than Sensor Readings
+	if (!DEBUG_ARDUINO_ONLY) xTaskCreate(transmitStepCountData, "transmitStepCountData", STACK_SIZE, NULL, 2, NULL); // Keep Transmit at Lower Priority than Sensor Readings
 
 	vTaskStartScheduler();
 }
