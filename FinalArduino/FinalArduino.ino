@@ -47,7 +47,6 @@ long duration, distance, rightArmSensor, frontSensor, leftArmSensor,
 int DIST_THRESHOLD_SIDES = 50;
 int DIST_THRESHOLD_MID = 50;
 int DURATION_TIMEOUT_SENSOR = 3000;
-int totalDist = 0;
 
 // Step Counter
 volatile int xSampleNew, currAccY, currAccZ;
@@ -65,7 +64,6 @@ int numStepsTaken = 0;
 volatile long lastKnownMagnitude = 0;
 
 volatile int lastKnownDirection;
-volatile float lastDistanceTaken;
 
 int NUM_SAMPLE_COUNTS_TO_RECALCULATE_THRESHOLD = 50;
 int MINIMUM_ACCELERATION_MAGNITUDE = 5000;
@@ -289,18 +287,15 @@ void calibrate() {
 
 void getAccelReadings(void *p) {
 	for (;;) {
-		//xSemaphoreTake(xSemaphore, portMAX_DELAY);
+		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 
-		int prevSample = xSampleNew; //Get previous reading
+        //Retrieve data from altimu
 		readAltimu();
-
+       
 		//Now check if step is taken
-		float distanceTaken = 0;
-		int xAccDelta = abs(prevSample - xSampleNew);
 		unsigned long currTime = millis();
 		unsigned long timeDiff = currTime - lastStepTime;
-		//if (xAccDelta <= MINIMUM_ACCELERATION_DELTA) return;
-		//if (xAccDelta >= MINIMUM_ACCELERATION_DELTA) {
+       
 		//Check that walker has accelerated significantly
 		if (timeDiff >= MINIMUM_STEP_INTERVAL_MILLISECONDS) {
 			//Check that steps arent double counted
@@ -310,28 +305,24 @@ void getAccelReadings(void *p) {
 					//if (xSampleNew > xDynamicThreshold) {
 					lastStepTime = currTime;
 					numStepsTaken++;
-					totalDist = DIST_PER_STEP_CM * numStepsTaken;
 					Serial.print("Step taken! --- ");
 					Serial.print(numStepsTaken);
 					Serial.println(" ");
-					Serial.print("Dist = ");
-					Serial.println(totalDist);
 					//} else {
 					//	Serial.println("Dynamic threshold not met");
 					//}
 				} else {
-					//      Serial.println("Step detected but not within interval threshold");
+//			        Serial.println("Step detected but not within interval threshold");
 				}
 			} else {
-				//Serial.print("Magnitude not met --- "); Serial.println(lastKnownMagnitude);
+//				Serial.print("Magnitude not met --- "); Serial.println(lastKnownMagnitude);
 			}
 		} else {
-			//Serial.println("Step interval timing not met");
+//			Serial.println("Step interval timing not met");
 		}
 		//}
 
-		lastDistanceTaken += distanceTaken;
-		//xSemaphoreGive(xSemaphore);
+		xSemaphoreGive(xSemaphore);
 		vTaskDelay(5);
 	}
 }
@@ -339,10 +330,10 @@ void getAccelReadings(void *p) {
 void getSensorReadings(void *p) {
 	int sensorCounter = 0;
 	for (;;) {
-		//xSemaphoreTake(xSemaphore, portMAX_DELAY);
+		xSemaphoreTake(xSemaphore, portMAX_DELAY);
 		readSensor(sensorCounter);
 		sensorCounter = (sensorCounter + 1) % 5;
-		//xSemaphoreGive(xSemaphore);
+		xSemaphoreGive(xSemaphore);
 		vTaskDelay(5);
 	}
 }
@@ -419,11 +410,6 @@ void transmitStepCountData(void *p) {
 	for (;;) {
 		//xSemaphoreTake(xSemaphore, portMAX_DELAY);
 		isSendingData = true;
-
-		int distanceToTransmit = 0;
-		distanceToTransmit += totalDist;
-		Serial.print("transmitStepCountData");
-		Serial.println(distanceToTransmit);
 
 		StaticJsonBuffer<256> jsonBuffer;
 		JsonObject& json = jsonBuffer.createObject();
