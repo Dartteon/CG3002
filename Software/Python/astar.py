@@ -30,7 +30,6 @@ voiceOutput = VoiceHandler()
 voiceThread = threading.Thread(target=voiceOutput.voiceLoop)
 voiceThread.start()
 keypad = Keypad()
-
 def main():
     # Integer input mode for fixed list of maps
     # buildingName = int_to_buildingName()
@@ -42,15 +41,15 @@ def main():
         voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, constants.HIGH_PRIORITY))
         print('Building name or number: ')
         buildingNameOrNumber = str(keypad.getKeysInput())
-        time.sleep(1)
         voiceOutput.addToQueue(INSTRUCTION(str(buildingNameOrNumber), constants.HIGH_PRIORITY))
-
+        time.sleep(1)
         # text_to_speech(messages.INPUT_BUILDING_LEVEL)
         voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, constants.HIGH_PRIORITY))
         print('Floor number: ')
         floorNumber = str(keypad.getKeysInput())
-        time.sleep(1)
         voiceOutput.addToQueue(INSTRUCTION(str(floorNumber), constants.HIGH_PRIORITY))
+
+        voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
 
         jsonmap = get_json(buildingNameOrNumber, floorNumber)
         info = jsonmap['info']
@@ -72,19 +71,19 @@ def main():
     while True:
         try:
             print buildingName + ' Floor ' + str(floorNumber) + ' has node IDs from 1 to ' + str(len(nodeList))
+            time.sleep(1)
             # text_to_speech(messages.INPUT_START_NODE)
             voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, constants.HIGH_PRIORITY))
             print('Start node ID: ')
             startNodeRaw = int(keypad.getKeysInput())
-            time.sleep(1)
             startNode = nodeList[startNodeRaw-1]
             voiceOutput.addToQueue(INSTRUCTION(str(startNodeRaw), constants.HIGH_PRIORITY))
 
+            time.sleep(1)
             # text_to_speech(messages.INPUT_END_NODE)
             voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, constants.HIGH_PRIORITY))
             print('Goal node ID: ')
             goalNodeRaw = int(keypad.getKeysInput())
-            time.sleep(1)
             goalNode = nodeList[goalNodeRaw-1]
             voiceOutput.addToQueue(INSTRUCTION(str(goalNodeRaw), constants.HIGH_PRIORITY))
         except IndexError:
@@ -185,23 +184,30 @@ class NODE:
 def get_json(buildingName, floorNumber):
     '''Returns map data from building name and floor number'''
     try:
-        url = base_url % (buildingName, floorNumber)
-        response = urlopen(url)
-        data = json.loads(response.read())
-        info = data['info']
-        if info is not None:
-            fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
-            with open(fileName, 'w') as file:
-                json.dump(data, file)
-    except Exception as e:
-        print e
+        voiceOutput.addToQueue(INSTRUCTION('trying wifi', constants.HIGH_PRIORITY))
+#        url = base_url % (buildingName, floorNumber)
+#        response = urlopen(url)
+#        data = json.loads(response.read())
+#        info = data['info']
+#        if info is not None:
+#            fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
+#            with open(fileName, 'w') as file:
+#                json.dump(data, file)
+#            return data
+        voiceOutput.addToQueue(INSTRUCTION('wifi failed', constants.HIGH_PRIORITY))
+        pass
+#    except Exception as e:
+    finally:
+#        print e
+        voiceOutput.addToQueue(INSTRUCTION('trying cache', constants.HIGH_PRIORITY))
         try:
-            fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
+            fileName = '/home/pi/CG3002/Software/Python/' + str(buildingName) + '-' + str(floorNumber) + '.json'
             with open(fileName, 'r') as file:
                 data = json.load(file)
+                return data
         except Exception as e:
+            voiceOutput.addToQueue(INSTRUCTION('cache failed', constants.HIGH_PRIORITY))
             print e
-    return data
 
 def heuristic(goalNode, nodeList):
     '''Returns Euclidean Distance between all nodes and goal node'''
