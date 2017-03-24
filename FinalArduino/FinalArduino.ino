@@ -13,7 +13,7 @@
 LSM303 compass;
 L3G gyro;
 
-bool DEBUG_ARDUINO_ONLY = true;
+bool DEBUG_ARDUINO_ONLY = false;
 
 //  ============================  Hardware Variables ============================
 // Ultrasound Sensors
@@ -45,7 +45,7 @@ bool DEBUG_ARDUINO_ONLY = true;
 long duration, distance, rightArmSensor, frontSensor, leftArmSensor,
 		leftLegSensor, rightLegSensor;
 int DIST_THRESHOLD_SIDES = 50;
-int DIST_THRESHOLD_MID = 50;
+int DIST_THRESHOLD_MID = 100;
 int DURATION_TIMEOUT_SENSOR = 3000;
 
 // Step Counter
@@ -71,12 +71,6 @@ int MINIMUM_STEP_INTERVAL_MILLISECONDS = 800;
 int MINIMUM_ACCELERATION_DELTA = 200; //Crossing below threshold not enough - it must be a decent acceleration change
 int DIST_PER_STEP_CM = 60;
 int PREDIFINED_PRECISION = 250; //minimum delta to shift new value into xSampleNew (xSampleNew)
-float PERCENTAGE_BELOW_DYNAMIC_THRESHOLD_TRIGGER = .2; //xAcc must be significantly below threshold, TBI
-//  ==============================================================================
-
-bool proceed = true;
-
-int phase = 0;
 
 //  ============================  Hardware-Firmware Variables ============================
 //TODO: Integrate with Hardware
@@ -106,20 +100,19 @@ QueueHandle_t xQueue = NULL;
 //  ===============================  Hardware Functions  ===============================
 
 void SonarSensor(int trigPin, int echoPin) {
-	if (!proceed)
-		return;
-	proceed = false;
 	distance = 9999;
 	digitalWrite(trigPin, LOW);
 	delayMicroseconds(2);
 	digitalWrite(trigPin, HIGH);
 	delayMicroseconds(10);
 	digitalWrite(trigPin, LOW);
-	duration = pulseIn(echoPin, HIGH, DURATION_TIMEOUT_SENSOR);
+    int timeOut = DURATION_TIMEOUT_SENSOR;
+    if (trigPin == trigPin2 || trigPin == trigPin4 || trigPin == trigPin5)
+        timeOut *= 2;
+	duration = pulseIn(echoPin, HIGH, timeOut);
 	if (duration == 0)
-		duration = DURATION_TIMEOUT_SENSOR;
+		duration = timeOut;
 	distance = (duration / 2) / 29.1;
-	proceed = true;
 }
 
 void readSensor(int i) {
@@ -139,7 +132,7 @@ void readSensor(int i) {
 		frontSensor = distance;
 		digitalWrite(motorPin2,
 				(frontSensor <= DIST_THRESHOLD_MID) ? HIGH : LOW);
-//		Serial.println(frontSensor);
+		Serial.println(frontSensor);
 		break;
 	case 2:
 		SonarSensor(trigPin3, echoPin3);
