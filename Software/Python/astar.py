@@ -42,12 +42,14 @@ def main():
         voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, constants.HIGH_PRIORITY))
         print('Building name or number: ')
         buildingNameOrNumber = str(keypad.getKeysInput())
+        time.sleep(1)
         voiceOutput.addToQueue(INSTRUCTION(str(buildingNameOrNumber), constants.HIGH_PRIORITY))
 
         # text_to_speech(messages.INPUT_BUILDING_LEVEL)
         voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, constants.HIGH_PRIORITY))
         print('Floor number: ')
         floorNumber = str(keypad.getKeysInput())
+        time.sleep(1)
         voiceOutput.addToQueue(INSTRUCTION(str(floorNumber), constants.HIGH_PRIORITY))
 
         jsonmap = get_json(buildingNameOrNumber, floorNumber)
@@ -74,6 +76,7 @@ def main():
             voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, constants.HIGH_PRIORITY))
             print('Start node ID: ')
             startNodeRaw = int(keypad.getKeysInput())
+            time.sleep(1)
             startNode = nodeList[startNodeRaw-1]
             voiceOutput.addToQueue(INSTRUCTION(str(startNodeRaw), constants.HIGH_PRIORITY))
 
@@ -81,6 +84,7 @@ def main():
             voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, constants.HIGH_PRIORITY))
             print('Goal node ID: ')
             goalNodeRaw = int(keypad.getKeysInput())
+            time.sleep(1)
             goalNode = nodeList[goalNodeRaw-1]
             voiceOutput.addToQueue(INSTRUCTION(str(goalNodeRaw), constants.HIGH_PRIORITY))
         except IndexError:
