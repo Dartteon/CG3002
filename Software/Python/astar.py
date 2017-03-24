@@ -326,7 +326,7 @@ def path_to_goal(nodeList, route, northAt):
             elif turnAngle <= -180:
                 turnAngle += 360
 
-            if abs(turnAngle) > 20:
+            if abs(turnAngle) > 15:
                 instruction = 'Turn ' + str(turnAngle)
                 # to_user(instruction, audio)
                 print instruction
