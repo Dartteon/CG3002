@@ -15,6 +15,7 @@ import messages
 import constants
 from voiceThread import VoiceHandler
 from voiceThread import INSTRUCTION
+from gpio import Keypad
 
 TTS_DELAY = 3.5 # Text to speech delay in seconds
 
@@ -28,6 +29,7 @@ arduino = Arduino()
 voiceOutput = VoiceHandler()
 voiceThread = threading.Thread(target=voiceOutput.voiceLoop)
 voiceThread.start()
+keypad = Keypad()
 
 def main():
     # Integer input mode for fixed list of maps
@@ -38,12 +40,14 @@ def main():
     while info is None:
         # text_to_speech(messages.INPUT_BUILDING_NUMBER)
         voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, constants.HIGH_PRIORITY))
-        buildingNameOrNumber = str(raw_input('Building name or number: '))
+        print('Building name or number: ')
+        buildingNameOrNumber = str(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(str(buildingNameOrNumber), constants.HIGH_PRIORITY))
 
         # text_to_speech(messages.INPUT_BUILDING_LEVEL)
         voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, constants.HIGH_PRIORITY))
-        floorNumber = raw_input('Floor number: ')
+        print('Floor number: ')
+        floorNumber = str(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(str(floorNumber), constants.HIGH_PRIORITY))
 
         jsonmap = get_json(buildingNameOrNumber, floorNumber)
@@ -68,13 +72,15 @@ def main():
             print buildingName + ' Floor ' + str(floorNumber) + ' has node IDs from 1 to ' + str(len(nodeList))
             # text_to_speech(messages.INPUT_START_NODE)
             voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, constants.HIGH_PRIORITY))
-            startNodeRaw = int(raw_input('Start node ID: '))
+            print('Start node ID: ')
+            startNodeRaw = int(keypad.getKeysInput())
             startNode = nodeList[startNodeRaw-1]
             voiceOutput.addToQueue(INSTRUCTION(str(startNodeRaw), constants.HIGH_PRIORITY))
 
             # text_to_speech(messages.INPUT_END_NODE)
             voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, constants.HIGH_PRIORITY))
-            goalNodeRaw = int(raw_input('Goal node ID: '))
+            print('Goal node ID: ')
+            goalNodeRaw = int(keypad.getKeysInput())
             goalNode = nodeList[goalNodeRaw-1]
             voiceOutput.addToQueue(INSTRUCTION(str(goalNodeRaw), constants.HIGH_PRIORITY))
         except IndexError:

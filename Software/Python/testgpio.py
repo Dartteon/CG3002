@@ -1,7 +1,8 @@
 import os
 from gpio import Keypad
-
+keypad
 def gpioMain():
+    global keypad
     numberString = ''
     keypad = KeyPad()
     while numberString is not '0000':
