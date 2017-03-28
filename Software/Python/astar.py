@@ -16,7 +16,7 @@ import constants
 from voiceThread import VoiceHandler
 from voiceThread import INSTRUCTION
 from gpio import Keypad
-
+from initialisation import get_confirmation()
 TTS_DELAY = 3.5 # Text to speech delay in seconds
 
 # Base URL for map info download
@@ -30,16 +30,6 @@ voiceOutput = VoiceHandler()
 voiceThread = threading.Thread(target=voiceOutput.voiceLoop)
 voiceThread.start()
 keypad = Keypad()
-def get_confirmation(buildingNameOrNumber, floorNumber):
-    while True:
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_CONFIRMATION.format(building = buildingNameOrNumber, floor = floorNumber), constants.HIGH_PRIORITY))
-        print('1 to confirm, 2 to try again: ')
-        confirmation = str(keypad.getKeysInput())
-        voiceOutput.addToQueue(INSTRUCTION(confirmation, constants.HIGH_PRIORITY))
-        if confirmation not ('1' or '2'):
-            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_OUT_OF_RANGE, constants.HIGH_PRIORITY))
-        else:
-            return confirmation
 
 def main():
     # Integer input mode for fixed list of maps
