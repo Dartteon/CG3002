@@ -30,6 +30,17 @@ voiceOutput = VoiceHandler()
 voiceThread = threading.Thread(target=voiceOutput.voiceLoop)
 voiceThread.start()
 keypad = Keypad()
+def get_confirmation(buildingNameOrNumber, floorNumber):
+    while True:
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_CONFIRMATION.format(building = buildingNameOrNumber, floor = floorNumber), constants.HIGH_PRIORITY))
+        print('1 to confirm, 2 to try again: ')
+        confirmation = str(keypad.getKeysInput())
+        voiceOutput.addToQueue(INSTRUCTION(confirmation, constants.HIGH_PRIORITY))
+        if confirmation not ('1' or '2'):
+            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_OUT_OF_RANGE, constants.HIGH_PRIORITY))
+        else:
+            return confirmation
+
 def main():
     # Integer input mode for fixed list of maps
     # buildingName = int_to_buildingName()
@@ -37,20 +48,26 @@ def main():
     # Text input mode for new maps
     info = None
     while info is None:
-        # text_to_speech(messages.INPUT_BUILDING_NUMBER)
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, constants.HIGH_PRIORITY))
-        print('Building name or number: ')
-        buildingNameOrNumber = str(keypad.getKeysInput())
-        voiceOutput.addToQueue(INSTRUCTION(str(buildingNameOrNumber), constants.HIGH_PRIORITY))
-        time.sleep(1)
-        # text_to_speech(messages.INPUT_BUILDING_LEVEL)
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, constants.HIGH_PRIORITY))
-        print('Floor number: ')
-        floorNumber = str(keypad.getKeysInput())
-        voiceOutput.addToQueue(INSTRUCTION(str(floorNumber), constants.HIGH_PRIORITY))
+        # loop until user confirms the inputs
+        while True:
+            # text_to_speech(messages.INPUT_BUILDING_NUMBER)
+            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, constants.HIGH_PRIORITY))
+            print('Building name or number: ')
+            buildingNameOrNumber = str(keypad.getKeysInput())
+            voiceOutput.addToQueue(INSTRUCTION(buildingNameOrNumber, constants.HIGH_PRIORITY))
+            time.sleep(1)
+            # text_to_speech(messages.INPUT_BUILDING_LEVEL)
+            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, constants.HIGH_PRIORITY))
+            print('Floor number: ')
+            floorNumber = str(keypad.getKeysInput())
+            voiceOutput.addToQueue(INSTRUCTION(floorNumber, constants.HIGH_PRIORITY))
+            time.sleep(1)
+            # get confirmation
+            confirmation = get_confirmation(buildingNameOrNumber, floorNumber)
+            if confirmation is '1':
+                break
 
         voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
-
         jsonmap = get_json(buildingNameOrNumber, floorNumber)
         info = jsonmap['info']
         if info is None:
