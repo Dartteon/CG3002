@@ -3,7 +3,7 @@ from Firmware_Receiver import SerialCommunicator
 from Firmware_Receiver import Arduino
 # from Firmware_Dummy import SerialCommunicator
 # from Firmware_Dummy import Arduino
-import pyttsx
+# import pyttsx
 import json
 import heapq
 import math
@@ -16,7 +16,7 @@ import constants
 from voiceThread import VoiceHandler
 from voiceThread import INSTRUCTION
 from gpio import Keypad
-from initialisation import get_confirmation()
+from initialisation import get_confirmation
 TTS_DELAY = 3.5 # Text to speech delay in seconds
 
 # Base URL for map info download

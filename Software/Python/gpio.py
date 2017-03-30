@@ -2,8 +2,8 @@ import RPi.GPIO as GPIO
 
 
 class Keypad():
-	# CONSTANTS
-	KEYPAD = [['1','2','3'],
+    # CONSTANTS
+    KEYPAD = [['1','2','3'],
                 ['4','5','6'],
                 ['7','8','9'],
                 ['*','0','#']]
@@ -11,10 +11,10 @@ class Keypad():
     ROW = [7,8,25,24]
     COLUMN = [11,9,10]
 
-	def __init__(self):
+    def __init__(self):
         GPIO.setmode(GPIO.BCM)
 
-	def getKey(self):
+    def getKey(self):
         # Set all columns as output low
         for j in range(len(self.COLUMN)):
             GPIO.setup(self.COLUMN[j], GPIO.OUT)
