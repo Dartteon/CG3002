@@ -32,114 +32,195 @@ voiceOutput = VoiceHandler()
 voiceThread = threading.Thread(target=voiceOutput.voiceLoop)
 voiceThread.start()
 keypad = Keypad()
+buildingMode = 1
+totalNodeDistance = 0
 
 def main():
     # Integer input mode for fixed list of maps
     # buildingName = int_to_buildingName()
     # floorNumber = int_to_floorNumber(buildingName)
     # Text input mode for new maps
-    info = None
-    while info is None:
-        # loop until user confirms the inputs
-        while True:
-            # text_to_speech(messages.INPUT_BUILDING_NUMBER)
-            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER, constants.HIGH_PRIORITY))
-            print('Building name or number: ')
-            buildingNameOrNumber = str(keypad.getKeysInput())
-            voiceOutput.addToQueue(INSTRUCTION(buildingNameOrNumber, constants.HIGH_PRIORITY))
-            time.sleep(1)
-            # text_to_speech(messages.INPUT_BUILDING_LEVEL)
-            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL, constants.HIGH_PRIORITY))
-            print('Floor number: ')
-            floorNumber = str(keypad.getKeysInput())
-            voiceOutput.addToQueue(INSTRUCTION(floorNumber, constants.HIGH_PRIORITY))
-            time.sleep(1)
-            # get confirmation
-            confirmation = get_confirmation(buildingNameOrNumber, floorNumber)
-            if confirmation is '1':
-                break
+    # info = None
+    # while info is None:
+    # Get start map
+    # loop until user confirms the inputs
+    # Get start details
+    while True:
+        # Get building
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER.format(type = 'starting'), constants.HIGH_PRIORITY))
+        print('Starting building name or number: ')
+        buildingNameOrNumber = str(keypad.getKeysInput())
+        voiceOutput.addToQueue(INSTRUCTION(buildingNameOrNumber, constants.HIGH_PRIORITY))
+        time.sleep(1)
 
+        # Get floor
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL.format(type = 'starting'), constants.HIGH_PRIORITY))
+        print('Starting floor number: ')
+        floorNumber = str(keypad.getKeysInput())
+        voiceOutput.addToQueue(INSTRUCTION(floorNumber, constants.HIGH_PRIORITY))
+        time.sleep(1)
+
+        # Get start node
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, constants.HIGH_PRIORITY))
+        print('Start node ID: ')
+        startNodeRaw = int(keypad.getKeysInput())
+        voiceOutput.addToQueue(INSTRUCTION(str(startNodeRaw), constants.HIGH_PRIORITY))
+        time.sleep(1)
+
+        # Get confirmation
+        confirmation = get_confirmation(buildingNameOrNumber, floorNumber, startNodeRaw)
+        if confirmation is '1':
+            break
+
+    # Get end details
+    while True:
+        # Get building
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER.format(type = 'destination'), constants.HIGH_PRIORITY))
+        print('Destination building name or number: ')
+        destinationBuildingNameOrNumber = str(keypad.getKeysInput())
+        voiceOutput.addToQueue(INSTRUCTION(destinationBuildingNameOrNumber, constants.HIGH_PRIORITY))
+        time.sleep(1)
+
+        # Get floor
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL.format(type = 'destination'), constants.HIGH_PRIORITY))
+        print('Destination floor number: ')
+        destinationFloorNumber = str(keypad.getKeysInput())
+        voiceOutput.addToQueue(INSTRUCTION(destinationFloorNumber, constants.HIGH_PRIORITY))
+        time.sleep(1)
+
+        # Get end node
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, constants.HIGH_PRIORITY))
+        print('Goal node ID: ')
+        goalNodeRaw = int(keypad.getKeysInput())
+        voiceOutput.addToQueue(INSTRUCTION(str(goalNodeRaw), constants.HIGH_PRIORITY))
+
+        # Get confirmation
+        confirmation = get_confirmation(destinationBuildingNameOrNumber, destinationFloorNumber, goalNodeRaw)
+        if confirmation is '1':
+            break
+
+    if (buildingNameOrNumber != destinationBuildingNameOrNumber) or (floorNumber != destinationFloorNumber):
+        mapList = []
+        get_map_list('0', buildingNameOrNumber, floorNumber, destinationBuildingNameOrNumber, destinationFloorNumber, mapList)
+        buildingMode = 2
+    else:
+        mapList = ['{building}-{floor}'.format(building = buildingNameOrNumber, floor = floorNumber)]
+
+    if buildingMode == 1:
         voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
         jsonmap = get_json(buildingNameOrNumber, floorNumber)
         info = jsonmap['info']
-        if info is None:
-            print('No map available for this building name and floor number combination.')
-    wifi = jsonmap['wifi']
-    northAt = int(info['northAt'])
-    nodeList = get_nodes(jsonmap)
+        northAt = int(info['northAt'])
+        nodeList = get_nodes(jsonmap)
 
-    try:
-        buildingName = int(buildingNameOrNumber)
-        buildingName = 'Building ' + str(buildingName)
-    except ValueError:
-        buildingName = buildingNameOrNumber
+        startNode = nodeList[startNodeRaw-1]
+        goalNode = nodeList[goalNodeRaw-1]
 
-    # newline()
-    print 'Name of the first node at ' + buildingName + ' Floor ' + str(floorNumber) + ' is ' + nodeList[0].nodeName
-    print 'North is at ' + info['northAt'] + ' degrees'
-    while True:
-        try:
-            print buildingName + ' Floor ' + str(floorNumber) + ' has node IDs from 1 to ' + str(len(nodeList))
-            time.sleep(1)
-            # text_to_speech(messages.INPUT_START_NODE)
-            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, constants.HIGH_PRIORITY))
-            print('Start node ID: ')
-            startNodeRaw = int(keypad.getKeysInput())
-            startNode = nodeList[startNodeRaw-1]
-            voiceOutput.addToQueue(INSTRUCTION(str(startNodeRaw), constants.HIGH_PRIORITY))
+        print 'Name of the first node at building' + buildingNameOrNumber + ' Floor ' + str(floorNumber) + ' is ' + nodeList[0].nodeName
+        print 'North is at ' + info['northAt'] + ' degrees'
 
-            time.sleep(1)
-            # text_to_speech(messages.INPUT_END_NODE)
-            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, constants.HIGH_PRIORITY))
-            print('Goal node ID: ')
-            goalNodeRaw = int(keypad.getKeysInput())
-            goalNode = nodeList[goalNodeRaw-1]
-            voiceOutput.addToQueue(INSTRUCTION(str(goalNodeRaw), constants.HIGH_PRIORITY))
-        except IndexError:
-            print(messages.OUT_OF_RANGE)
-            newline()
-            text_to_speech(messages.OUT_OF_RANGE)
-            pass
-        else:
-            break
+        hList = heuristic(goalNode, nodeList)
 
+        for index in range(len(hList)):
+            nodeList[index].h = hList[index]
 
-    hList = heuristic(goalNode, nodeList)
+        openList = []
+        closedList = []
+        orderList = []
 
-    for index in range(len(hList)):
-        nodeList[index].h = hList[index]
+        heapq.heappush(openList, startNode)
 
-    openList = []
-    closedList = []
-    orderList = []
+        while openList:
+            currentNode = heapq.heappop(openList)
+            orderList.append(currentNode.nodeId)
+            if currentNode == goalNode:
+                openList = []
+            else:
+                adjacentNodeId = [int(x) for x in currentNode.linkTo.split(',')]
+                for nodeId in adjacentNodeId:
+                    gTemp = currentNode.g + distance_between(nodeList[nodeId-1], currentNode)
+                    if nodeList[nodeId-1] in openList and nodeList[nodeId-1].g <= gTemp:
+                        pass
+                    elif nodeList[nodeId-1] in closedList and nodeList[nodeId-1].g <= gTemp:
+                        pass
+                    else:
+                        nodeList[nodeId-1].parent = currentNode.nodeId
+                        nodeList[nodeId-1].g = gTemp
+                        heapq.heappush(openList, nodeList[nodeId-1])
 
-    heapq.heappush(openList, startNode)
+            closedList.append(currentNode)
 
-    while openList:
-        currentNode = heapq.heappop(openList)
-        orderList.append(currentNode.nodeId)
-        if currentNode == goalNode:
-            openList = []
-        else:
-            adjacentNodeId = [int(x) for x in currentNode.linkTo.split(',')]
-            for nodeId in adjacentNodeId:
-                gTemp = currentNode.g + distance_between(nodeList[nodeId-1], currentNode)
-                if nodeList[nodeId-1] in openList and nodeList[nodeId-1].g <= gTemp:
-                    pass
-                elif nodeList[nodeId-1] in closedList and nodeList[nodeId-1].g <= gTemp:
-                    pass
-                else:
-                    nodeList[nodeId-1].parent = currentNode.nodeId
-                    nodeList[nodeId-1].g = gTemp
-                    heapq.heappush(openList, nodeList[nodeId-1])
+        route = get_route(goalNode, nodeList)
+        print 'Order of visited nodes: ' + str(orderList)
+        print 'Route is: ' + str(route)
 
-        closedList.append(currentNode)
+        path_to_goal(nodeList, route, northAt)
+    elif buildingMode == 2:
+        # Prepare data
 
-    route = get_route(goalNode, nodeList)
-    print 'Order of visited nodes: ' + str(orderList)
-    print 'Route is: ' + str(route)
+        #Loop
+        while mapList:
+            if len(mapList) == 1:
+                currMap = mapList.pop(0)
+                voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
+                jsonmap = get_json(currMap.split('-')[0], currMap.split('-')[1])
+                info = jsonmap['info']
+                northAt = int(info['northAt'])
+                nodeList = get_nodes(jsonmap)
+                startNode = nodeList[startNodeRaw-1]
+                goalNode = nodeList[goalNodeRaw-1]
+            else:
+                currMap = mapList.pop(0)
+                voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
+                jsonmap = get_json(currMap.split('-')[0], currMap.split('-')[1])
+                info = jsonmap['info']
+                northAt = int(info['northAt'])
+                nodeList = get_nodes(jsonmap)
 
-    path_to_goal(nodeList, route, northAt)
+                for node in nodeList:
+                    if mapList[0] in node.nodeName:
+                        goalNode = node
+                        nextStartNodeRaw = node.nodeName.split('-').pop()
+                        break
+                startNode = nodeList[startNodeRaw-1]
+                hList = heuristic(goalNode, nodeList)
+
+                for index in range(len(hList)):
+                    nodeList[index].h = hList[index]
+
+                openList = []
+                closedList = []
+                orderList = []
+
+                heapq.heappush(openList, startNode)
+
+                while openList:
+                    currentNode = heapq.heappop(openList)
+                    orderList.append(currentNode.nodeId)
+                    if currentNode == goalNode:
+                        openList = []
+                    else:
+                        adjacentNodeId = [int(x) for x in currentNode.linkTo.split(',')]
+                        for nodeId in adjacentNodeId:
+                            gTemp = currentNode.g + distance_between(nodeList[nodeId-1], currentNode)
+                            if nodeList[nodeId-1] in openList and nodeList[nodeId-1].g <= gTemp:
+                                pass
+                            elif nodeList[nodeId-1] in closedList and nodeList[nodeId-1].g <= gTemp:
+                                pass
+                            else:
+                                nodeList[nodeId-1].parent = currentNode.nodeId
+                                nodeList[nodeId-1].g = gTemp
+                                heapq.heappush(openList, nodeList[nodeId-1])
+
+                    closedList.append(currentNode)
+
+                route = get_route(goalNode, nodeList)
+                print 'Order of visited nodes: ' + str(orderList)
+                print 'Route is: ' + str(route)
+
+                path_to_goal(nodeList, route, northAt)
+                startNodeRaw = nextStartNodeRaw
+
 
 class NODE:
     '''Used instead of map data for ease of use'''
@@ -190,6 +271,25 @@ class NODE:
         self._h = heuristic
         self._f = self.g + heuristic
 
+def get_map_list(prevNode, buildingStart, floorStart, buildingEnd, floorEnd, mapList):
+    if (buildingStart == buildingEnd) and (floorStart == floorEnd):
+        mapList.append('{building}-{floor}'.format(building = buildingStart, floor = floorStart))
+        return
+    startMap = get_json(buildingStart, floorStart)
+    newNode = False
+    for node in startMap['map']:
+        if re.match(r'TO \w+-\d+-\d+', node['nodeName']):
+            connector = re.findall(r'\d+', node['nodeName'][2:])
+            connectingMap = connector[0] + '-' + connector[1]
+            connectingNodeID = connector[2]
+            if prevNode != connectingNodeID:
+                newNode = True
+                mapList.append('{building}-{floor}'.format(building = buildingStart, floor = floorStart))
+                # print buildingStart+'-'+floorStart
+                get_map_list(node['nodeId'], connector[0], connector[1], buildingEnd, floorEnd, mapList)
+    if not newNode:
+        mapList.pop()
+
 def get_json(buildingName, floorNumber):
     '''Returns map data from building name and floor number'''
     try:
@@ -211,6 +311,7 @@ def get_json(buildingName, floorNumber):
         voiceOutput.addToQueue(INSTRUCTION('trying cache', constants.HIGH_PRIORITY))
         try:
             fileName = '/home/pi/CG3002/Software/Python/' + str(buildingName) + '-' + str(floorNumber) + '.json'
+            # fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
             with open(fileName, 'r') as file:
                 data = json.load(file)
                 return data
@@ -232,7 +333,9 @@ def get_nodes(jsonmap):
     for node in jsonmap['map']:
         nodeList.append(NODE(node['nodeId'],node['x'],node['y'],node['nodeName'],node['linkTo']))
         if re.match(r'TO \d-\d-\d',node['nodeName']):
-            print node['nodeName']
+            connector = re.findall(r'\d+', node['nodeName'])
+            connectingMap = connector[0] + '-' + connector[1]
+            connectingNodeID = connector[2]
     return nodeList
 
 def distance_between(node1, node2):
@@ -267,8 +370,8 @@ def get_route(goalNode, nodeList):
 #     return displacement
 
 def path_to_goal(nodeList, route, northAt):
+    global totalNodeDistance
     index = 0
-    totalNodeDistance = 0
     prevTotalDistance = 0
     counter=0
     counterx=0
@@ -277,7 +380,7 @@ def path_to_goal(nodeList, route, northAt):
     position = {'x':nodeList[route[index]-1].x, 'y':nodeList[route[index]-1].y, 'heading':0}
     serial.serialFlush()
     arduino.handshakeWithArduino()
-    while previousNode is not goalNode:
+    while previousNode != goalNode:
         isNextNodeReached = False
         index += 1
         nextNode = nodeList[route[index]-1]
