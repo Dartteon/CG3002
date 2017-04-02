@@ -15,7 +15,7 @@ class INSTRUCTION:
         '''Initialise instruction'''
         self.message = str(message)
         self.priority = int(priority)
-        
+
     def __lt__(self, other):
         '''Return true if self instruction has smaller p than other instruction'''
         return self.priority < other.priority
