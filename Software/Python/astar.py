@@ -16,7 +16,7 @@ import constants
 from voiceThread import VoiceHandler
 from voiceThread import INSTRUCTION
 from gpio import Keypad
-from initialisation import get_confirmation
+# from initialisation import get_confirmation
 import re
 
 TTS_DELAY = 3.5 # Text to speech delay in seconds
@@ -27,7 +27,7 @@ base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s
 # Initialising Text-to-Speech
 # engine = pyttsx.init()
 serial = SerialCommunicator()
-arduino = Arduino()
+# arduino = Arduino()
 voiceOutput = VoiceHandler()
 voiceThread = threading.Thread(target=voiceOutput.voiceLoop)
 voiceThread.start()
@@ -93,7 +93,8 @@ def main():
         print('Goal node ID: ')
         goalNodeRaw = int(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(str(goalNodeRaw), constants.HIGH_PRIORITY))
-
+        time.sleep(1)
+		
         # Get confirmation
         confirmation = get_confirmation(destinationBuildingNameOrNumber, destinationFloorNumber, goalNodeRaw)
         if confirmation is '1':
@@ -105,7 +106,10 @@ def main():
         buildingMode = 2
     else:
         mapList = ['{building}-{floor}'.format(building = buildingNameOrNumber, floor = floorNumber)]
-
+    
+    serial.serialFlush()
+    serial.handshakeWithArduino()
+	
     if buildingMode == 1:
         voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
         jsonmap = get_json(buildingNameOrNumber, floorNumber)
@@ -113,8 +117,8 @@ def main():
         northAt = int(info['northAt'])
         nodeList = get_nodes(jsonmap)
 
-        startNode = nodeList[startNodeRaw-1]
-        goalNode = nodeList[goalNodeRaw-1]
+        startNode = nodeList[int(startNodeRaw)-1]
+        goalNode = nodeList[int(goalNodeRaw)-1]
 
         print 'Name of the first node at building' + buildingNameOrNumber + ' Floor ' + str(floorNumber) + ' is ' + nodeList[0].nodeName
         print 'North is at ' + info['northAt'] + ' degrees'
@@ -160,6 +164,7 @@ def main():
 
         #Loop
         while mapList:
+            print mapList
             if len(mapList) == 1:
                 currMap = mapList.pop(0)
                 voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
@@ -167,22 +172,27 @@ def main():
                 info = jsonmap['info']
                 northAt = int(info['northAt'])
                 nodeList = get_nodes(jsonmap)
-                startNode = nodeList[startNodeRaw-1]
-                goalNode = nodeList[goalNodeRaw-1]
+                print int(startNodeRaw)
+                startNode = nodeList[int(startNodeRaw)-1]
+                goalNode = nodeList[int(goalNodeRaw)-1]
             else:
                 currMap = mapList.pop(0)
                 voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
+                print currMap
                 jsonmap = get_json(currMap.split('-')[0], currMap.split('-')[1])
                 info = jsonmap['info']
+                print info
                 northAt = int(info['northAt'])
                 nodeList = get_nodes(jsonmap)
-
+                print jsonmap
                 for node in nodeList:
-                    if mapList[0] in node.nodeName:
+                    print node.nodeName
+                    goalName = 'TO '+mapList[0]
+                    if goalName in node.nodeName:
                         goalNode = node
                         nextStartNodeRaw = node.nodeName.split('-').pop()
                         break
-                startNode = nodeList[startNodeRaw-1]
+                startNode = nodeList[int(startNodeRaw)-1]
                 hList = heuristic(goalNode, nodeList)
 
                 for index in range(len(hList)):
@@ -271,6 +281,19 @@ class NODE:
         self._h = heuristic
         self._f = self.g + heuristic
 
+def get_confirmation(buildingNameOrNumber, floorNumber, nodeRaw):
+    while True:
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_CONFIRMATION.format(building = buildingNameOrNumber, floor = floorNumber, node = nodeRaw), constants.HIGH_PRIORITY))
+        print('1 to confirm, 2 to try again: ')
+        confirmation = str(keypad.getKeysInput())
+        voiceOutput.addToQueue(INSTRUCTION(confirmation, constants.HIGH_PRIORITY))
+        time.sleep(1)
+        if confirmation == '1' or confirmation == '2':
+            return confirmation
+            # pass
+        else:
+            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_OUT_OF_RANGE, constants.HIGH_PRIORITY))
+			
 def get_map_list(prevNode, buildingStart, floorStart, buildingEnd, floorEnd, mapList):
     if (buildingStart == buildingEnd) and (floorStart == floorEnd):
         mapList.append('{building}-{floor}'.format(building = buildingStart, floor = floorStart))
@@ -378,8 +401,6 @@ def path_to_goal(nodeList, route, northAt):
     previousNode = nodeList[route[index]-1]
     goalNode = nodeList[route[len(route)-1]-1]
     position = {'x':nodeList[route[index]-1].x, 'y':nodeList[route[index]-1].y, 'heading':0}
-    serial.serialFlush()
-    arduino.handshakeWithArduino()
     while previousNode != goalNode:
         isNextNodeReached = False
         index += 1
