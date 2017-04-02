@@ -1,6 +1,3 @@
-
-
-
 #include <ArduinoJson.h>
 #include <Arduino_FreeRTOS.h>
 #include <SoftwareSerial.h>
@@ -50,9 +47,9 @@ bool DEBUG_ARDUINO_ONLY = false;
 
 long duration, distance, rightArmSensor, frontSensor, leftArmSensor,
      leftLegSensor, rightLegSensor;
-int DIST_THRESHOLD_SIDES = 70;
-int DIST_THRESHOLD_MID = 70;
-int DURATION_TIMEOUT_SENSOR = 3000;
+int DIST_THRESHOLD_SIDES = 100;
+int DIST_THRESHOLD_MID = 100;
+int DURATION_TIMEOUT_SENSOR = 4200;
 float TIMEOUT_MULTIPLIER = 1.4; //50cm for each multiple
 
 // Step Counter
@@ -132,35 +129,35 @@ void readSensor(int i) {
       leftArmSensor = distance;
       digitalWrite(motorPin1,
                    (leftArmSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-      //		Serial.println(leftArmSensor);
+//      Serial.println(leftArmSensor);
       break;
     case 1:
       SonarSensor(trigPin2, echoPin2);
       frontSensor = distance;
       digitalWrite(motorPin2,
                    (frontSensor <= DIST_THRESHOLD_MID) ? HIGH : LOW);
-      Serial.println(frontSensor);
+//      Serial.println(frontSensor);
       break;
     case 2:
       SonarSensor(trigPin3, echoPin3);
       rightArmSensor = distance;
       digitalWrite(motorPin3,
                    (rightArmSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-      //		Serial.println(rightArmSensor);
+//      Serial.println(rightArmSensor);
       break;
     case 3:
       SonarSensor(trigPin4, echoPin4);
       leftLegSensor = distance;
       digitalWrite(motorPin4,
                    (leftLegSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-      //		Serial.println(leftLegSensor);
+//      Serial.println(leftLegSensor);
       break;
     case 4:
       SonarSensor(trigPin5, echoPin5);
       rightLegSensor = distance;
       digitalWrite(motorPin5,
                    (rightLegSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-      //			Serial.println(rightLegSensor);
+//      Serial.println(rightLegSensor);
       break;
   }
 }

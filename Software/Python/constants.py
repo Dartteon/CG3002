@@ -1,5 +1,5 @@
 SPEECH_DELAY = 0.5
-STRIDE_LENGTH = 65.0 # Stride length in cm
+STRIDE_LENGTH = 60.0 # Stride length in cm
 
 ####################
 # PRIORITY CONSTANTS
