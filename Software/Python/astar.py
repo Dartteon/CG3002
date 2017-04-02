@@ -25,7 +25,7 @@ TTS_DELAY = 3.5 # Text to speech delay in seconds
 base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
 
 # Initialising Text-to-Speech
-engine = pyttsx.init()
+# engine = pyttsx.init()
 serial = SerialCommunicator()
 arduino = Arduino()
 voiceOutput = VoiceHandler()
