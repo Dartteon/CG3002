@@ -17,6 +17,8 @@ from voiceThread import VoiceHandler
 from voiceThread import INSTRUCTION
 from gpio import Keypad
 from initialisation import get_confirmation()
+import re
+
 TTS_DELAY = 3.5 # Text to speech delay in seconds
 
 # Base URL for map info download
@@ -229,6 +231,8 @@ def get_nodes(jsonmap):
     nodeList=[]
     for node in jsonmap['map']:
         nodeList.append(NODE(node['nodeId'],node['x'],node['y'],node['nodeName'],node['linkTo']))
+        if re.match(r'TO \d-\d-\d',node['nodeName']):
+            print node['nodeName']
     return nodeList
 
 def distance_between(node1, node2):
