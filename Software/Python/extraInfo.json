@@ -1,0 +1,5 @@
+{"info":[
+	{"nodeId":"1","linkTo":"2", "overwriteStep":"10","extraComment":"beware stair up, platform step 3 4, platform step 7 8"},
+	{"nodeId":"2", "extraComment":"wall 50cm left"},
+	]
+}
