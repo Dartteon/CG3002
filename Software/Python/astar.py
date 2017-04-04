@@ -94,7 +94,7 @@ def main():
         goalNodeRaw = int(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(str(goalNodeRaw), constants.HIGH_PRIORITY))
         time.sleep(1)
-		
+
         # Get confirmation
         confirmation = get_confirmation(destinationBuildingNameOrNumber, destinationFloorNumber, goalNodeRaw)
         if confirmation is '1':
@@ -106,10 +106,10 @@ def main():
         buildingMode = 2
     else:
         mapList = ['{building}-{floor}'.format(building = buildingNameOrNumber, floor = floorNumber)]
-    
+
     serial.serialFlush()
     serial.handshakeWithArduino()
-	
+
     if buildingMode == 1:
         voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
         jsonmap = get_json(buildingNameOrNumber, floorNumber)
@@ -175,6 +175,44 @@ def main():
                 print int(startNodeRaw)
                 startNode = nodeList[int(startNodeRaw)-1]
                 goalNode = nodeList[int(goalNodeRaw)-1]
+
+                hList = heuristic(goalNode, nodeList)
+
+                for index in range(len(hList)):
+                    nodeList[index].h = hList[index]
+
+                openList = []
+                closedList = []
+                orderList = []
+
+                heapq.heappush(openList, startNode)
+
+                while openList:
+                    currentNode = heapq.heappop(openList)
+                    orderList.append(currentNode.nodeId)
+                    if currentNode == goalNode:
+                        openList = []
+                    else:
+                        adjacentNodeId = [int(x) for x in currentNode.linkTo.split(',')]
+                        for nodeId in adjacentNodeId:
+                            gTemp = currentNode.g + distance_between(nodeList[nodeId-1], currentNode)
+                            if nodeList[nodeId-1] in openList and nodeList[nodeId-1].g <= gTemp:
+                                pass
+                            elif nodeList[nodeId-1] in closedList and nodeList[nodeId-1].g <= gTemp:
+                                pass
+                            else:
+                                nodeList[nodeId-1].parent = currentNode.nodeId
+                                nodeList[nodeId-1].g = gTemp
+                                heapq.heappush(openList, nodeList[nodeId-1])
+
+                    closedList.append(currentNode)
+
+                route = get_route(goalNode, nodeList)
+                print 'Order of visited nodes: ' + str(orderList)
+                print 'Route is: ' + str(route)
+
+                path_to_goal(nodeList, route, northAt)
+
             else:
                 currMap = mapList.pop(0)
                 voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
@@ -293,7 +331,7 @@ def get_confirmation(buildingNameOrNumber, floorNumber, nodeRaw):
             # pass
         else:
             voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_OUT_OF_RANGE, constants.HIGH_PRIORITY))
-			
+
 def get_map_list(prevNode, buildingStart, floorStart, buildingEnd, floorEnd, mapList):
     if (buildingStart == buildingEnd) and (floorStart == floorEnd):
         mapList.append('{building}-{floor}'.format(building = buildingStart, floor = floorStart))
