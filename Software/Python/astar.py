@@ -32,7 +32,6 @@ voiceOutput = VoiceHandler()
 voiceThread = threading.Thread(target=voiceOutput.voiceLoop)
 voiceThread.start()
 keypad = Keypad()
-buildingMode = 1
 totalNodeDistance = 0
 
 def main():
@@ -45,6 +44,7 @@ def main():
     # Get start map
     # loop until user confirms the inputs
     # Get start details
+    buildingMode = 1
     while True:
         # Get building
         voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER.format(type = 'starting'), constants.HIGH_PRIORITY))
