@@ -444,7 +444,7 @@ void getSensorReadings(void *p) {
     }
     
     xSemaphoreGive(xSemaphore);
-    vTaskDelay(1);
+    vTaskDelay(4);
   }
 }
 
