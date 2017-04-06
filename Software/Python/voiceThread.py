@@ -59,20 +59,18 @@ class VoiceHandler:
             print 'queue empty.'
             self.voiceQueue.put(instruction)
             self.previousInstruction = instruction
-        elif self.previousInstruction.priority == instruction.priority and self.previousInstruction.message != instruction.message:
-            # Check if the instruction queue contains the word "steps" in it
-            # If so, clear the previous queue and push only the LATEST step guide command
-            if stepsSubstring in previousInstruction.message and stepsSubstring in instruction.message:
-                self.voiceQueue.queue.clear()
-                self.voiceQueue.put(instruction)
-                self.previousInstruction = instruction
-            else:
-                self.voiceQueue.put(instruction)
-                self.previousInstruction = instruction
-        elif self.previousInstruction.priority > instruction.priority and self.previousInstruction.message != instruction.message:
+        else:
             self.voiceQueue.queue.clear()
             self.voiceQueue.put(instruction)
             self.previousInstruction = instruction
+        # elif self.previousInstruction.priority == instruction.priority and self.previousInstruction.message != instruction.message:
+        #     self.voiceQueue.queue.clear()
+        #     self.voiceQueue.put(instruction)
+        #     self.previousInstruction = instruction
+        # elif self.previousInstruction.priority > instruction.priority and self.previousInstruction.message != instruction.message:
+        #     self.voiceQueue.queue.clear()
+        #     self.voiceQueue.put(instruction)
+        #     self.previousInstruction = instruction
         self.voiceLock.release()
 
     def sayMessage(self, message):
