@@ -8,6 +8,7 @@ import constants
 from Queue import Queue
 
 ttsTemplate = "espeak -s 150 -v en+f3 '{msg}' 2>/dev/null"
+stepsSubstring = "steps"
 
 class INSTRUCTION:
     '''Used instead of string to make comparable for priority queue'''
@@ -59,8 +60,15 @@ class VoiceHandler:
             self.voiceQueue.put(instruction)
             self.previousInstruction = instruction
         elif self.previousInstruction.priority == instruction.priority and self.previousInstruction.message != instruction.message:
-            self.voiceQueue.put(instruction)
-            self.previousInstruction = instruction
+            # Check if the instruction queue contains the word "steps" in it
+            # If so, clear the previous queue and push only the LATEST step guide command
+            if stepsSubstring in previousInstruction.message and stepsSubstring in instruction.message:
+                self.voiceQueue.queue.clear()
+                self.voiceQueue.put(instruction)
+                self.previousInstruction = instruction
+            else:
+                self.voiceQueue.put(instruction)
+                self.previousInstruction = instruction
         elif self.previousInstruction.priority > instruction.priority and self.previousInstruction.message != instruction.message:
             self.voiceQueue.queue.clear()
             self.voiceQueue.put(instruction)
