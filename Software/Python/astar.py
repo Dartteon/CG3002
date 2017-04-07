@@ -268,7 +268,7 @@ def main():
 
                 path_to_goal(nodeList, route, northAt)
                 startNodeRaw = nextStartNodeRaw
-                
+
     voiceOutput.addToQueue(INSTRUCTION(messages.DESTINATION_REACHED, constants.HIGH_PRIORITY))
 
 class NODE:
@@ -355,34 +355,36 @@ def get_map_list(prevNode, buildingStart, floorStart, buildingEnd, floorEnd, map
 def get_json(buildingName, floorNumber):
     '''Returns map data from building name and floor number'''
     try:
-        voiceOutput.addToQueue(INSTRUCTION('trying wifi', constants.HIGH_PRIORITY))
-#        url = base_url % (buildingName, floorNumber)
-#        response = urlopen(url)
-#        data = json.loads(response.read())
-#        info = data['info']
-#        if info is not None:
-#            fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
-#            with open(fileName, 'w') as file:
-#                json.dump(data, file)
-#            return data
-        voiceOutput.addToQueue(INSTRUCTION('wifi failed', constants.HIGH_PRIORITY))
-        pass
-#    except Exception as e:
-    finally:
-#        print e
         voiceOutput.addToQueue(INSTRUCTION('trying cache', constants.HIGH_PRIORITY))
+        if constants.IS_DEBUG_MODE:
+            fileName = ''
+        else:
+            fileName = '/home/pi/CG3002/Software/Python/'
+        fileName += str(buildingName) + '-' + str(floorNumber) + '.json'
+        with open(fileName, 'r') as file:
+            data = json.load(file)
+            debug_print(data)
+        return data
+    except Exception as e:
+        voiceOutput.addToQueue(INSTRUCTION('cache failed', constants.HIGH_PRIORITY))
+        print e
         try:
-            if constants.IS_DEBUG_MODE:
-                fileName = ''
-            else:
-                fileName = '/home/pi/CG3002/Software/Python/'
-            fileName += str(buildingName) + '-' + str(floorNumber) + '.json'
-            # fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
-            with open(fileName, 'r') as file:
-                data = json.load(file)
+            voiceOutput.addToQueue(INSTRUCTION('trying wifi', constants.HIGH_PRIORITY))
+            info = None
+            url = base_url % (buildingName, floorNumber)
+            response = urlopen(url)
+            data = json.loads(response.read())
+            debug_print(data)
+            info = data['info']
+            if info != None:
+                fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
+                with open(fileName, 'w') as file:
+                    json.dump(data, file)
+                    debug_print(data)
                 return data
+            voiceOutput.addToQueue(INSTRUCTION('wifi failed', constants.HIGH_PRIORITY))
+            pass
         except Exception as e:
-            voiceOutput.addToQueue(INSTRUCTION('cache failed', constants.HIGH_PRIORITY))
             print e
 
 def heuristic(goalNode, nodeList):
@@ -659,9 +661,9 @@ def request_data_from_arduino():
 def text_to_speech(text):
     os.system("espeak -s 200 -v en+f3 '{msg}' 2>/dev/null".format(msg = text))
 
-def debug_print(string):
+def debug_print(input):
     if constants.IS_DEBUG_MODE:
-        print(string)
+        print(input)
 
 def newline():
     print('')
