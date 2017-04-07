@@ -17,7 +17,7 @@ USELESS = 9999
 ##################
 #BOOLEAN CONSTANTS
 ##################
-IS_DEBUG_MODE = True
+IS_DEBUG_MODE = False
 
 #################
 #STRING CONSTANTS
