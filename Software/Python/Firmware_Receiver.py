@@ -2,6 +2,7 @@ import serial
 import time
 import json
 import traceback
+import constants
 
 class Arduino():
     #deprecated
@@ -21,10 +22,13 @@ class Arduino():
         print ('end handshake')
 
 class SerialCommunicator():
-    serial1 = serial.Serial('/dev/serial0',9600,timeout=5)
+    if not constants.IS_DEBUG_MODE:
+        serial1 = serial.Serial('/dev/serial0',9600,timeout=5)
+
     def __init__(self):
-        if not self.serial1.isOpen():
-            self.serial1.open()
+        if not constants.IS_DEBUG_MODE:
+            if not self.serial1.isOpen():
+                self.serial1.open()
 
     def serialFlush(self):
         while self.serial1.inWaiting():
@@ -48,6 +52,13 @@ class SerialCommunicator():
 
 
     def serialRead(self):
+        if constants.IS_DEBUG_MODE:
+            direction = str(raw_input('direction: '))
+            distance = str(raw_input('distance: '))
+            readings = '{"direction":'+direction+', "distance":'+distance+'}'
+            jsonO = json.loads(readings)
+            return jsonO
+
         dataFlag = False
         while not dataFlag:
             readings = self.serial1.readline()
