@@ -75,8 +75,9 @@ class VoiceHandler:
 
     def sayMessage(self, message):
         print 'Voice output: ' + message
-        voiceCmd = ttsTemplate.format(msg = message)
-        self.lastProcess = subprocess.Popen(voiceCmd, shell=True, stdout=subprocess.PIPE, preexec_fn=os.setsid)
+        if not constants.IS_DEBUG_MODE:
+            voiceCmd = ttsTemplate.format(msg = message)
+            self.lastProcess = subprocess.Popen(voiceCmd, shell=True, stdout=subprocess.PIPE, preexec_fn=os.setsid)
 
     def isProcessDone(self):
         response = self.lastProcess.poll()
