@@ -30,6 +30,7 @@ voiceThread = threading.Thread(target=voiceOutput.voiceLoop)
 voiceThread.start()
 keypad = Keypad()
 totalNodeDistance = 0
+distanceOffset = 0
 
 def main():
     # Integer input mode for fixed list of maps
@@ -470,7 +471,7 @@ def path_to_goal(nodeList, route, northAt):
             distanceAudio = False
             step = False
             # data = received_data_from_arduino(position)
-            data = request_data_from_arduino()
+            data = request_data_from_arduino(prevTotalDistance)
             if data['distance'] > prevTotalDistance:
                 step = True
                 # text_to_speech(str(data['distance']) + ' steps')
@@ -596,9 +597,15 @@ def received_data_from_arduino(position):
     # print 'direction: ' + str(direction) + ' acceleration X, Y, Z: ' + str(meanAccelX) + ', ' + str(meanAccelY) + ', ' + str(meanAccelZ)
     return dataReceived
 
-def request_data_from_arduino():
+def request_data_from_arduino(prevTotalDistance):
+    global distanceOffset
+
     dataRequested = serial.serialRead()
-    print dataRequested
+    debug_print(dataRequested)
+    if dataRequested['distance'] < prevTotalDistance - distanceOffset:
+        distanceOffset = prevTotalDistance
+    dataRequested['distance'] += distanceOffset
+    debug_print(dataRequested)
     return dataRequested
 
 # def direction_for_user(turnAngle):
