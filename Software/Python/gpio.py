@@ -1,5 +1,7 @@
-import RPi.GPIO as GPIO
+import constants
 
+if not constants.IS_DEBUG_MODE:
+    import RPi.GPIO as GPIO
 
 class Keypad():
     # CONSTANTS
@@ -12,7 +14,8 @@ class Keypad():
     COLUMN = [11,9,10]
 
     def __init__(self):
-        GPIO.setmode(GPIO.BCM)
+        if not constants.IS_DEBUG_MODE:
+            GPIO.setmode(GPIO.BCM)
 
     def getKey(self):
         # Set all columns as output low
@@ -70,6 +73,9 @@ class Keypad():
             GPIO.setup(self.COLUMN[j], GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
     def getKeysInput(self):
+        if constants.IS_DEBUG_MODE:
+            string = str(raw_input())
+            return string
         inputBuffer = ""
         current_state = next_state = 0
         while(1):
