@@ -106,9 +106,9 @@ def main():
         buildingMode = 2
     else:
         mapList = ['{building}-{floor}'.format(building = buildingNameOrNumber, floor = floorNumber)]
-
-    serial.serialFlush()
-    serial.handshakeWithArduino()
+    if not constants.IS_DEBUG_MODE:
+        serial.serialFlush()
+        serial.handshakeWithArduino()
 
     if buildingMode == 1:
         voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
@@ -371,7 +371,11 @@ def get_json(buildingName, floorNumber):
 #        print e
         voiceOutput.addToQueue(INSTRUCTION('trying cache', constants.HIGH_PRIORITY))
         try:
-            fileName = '/home/pi/CG3002/Software/Python/' + str(buildingName) + '-' + str(floorNumber) + '.json'
+            if constants.IS_DEBUG_MODE:
+                fileName = ''
+            else:
+                fileName = '/home/pi/CG3002/Software/Python/'
+            fileName += str(buildingName) + '-' + str(floorNumber) + '.json'
             # fileName = str(buildingName) + '-' + str(floorNumber) + '.json'
             with open(fileName, 'r') as file:
                 data = json.load(file)
@@ -654,6 +658,10 @@ def request_data_from_arduino():
 
 def text_to_speech(text):
     os.system("espeak -s 200 -v en+f3 '{msg}' 2>/dev/null".format(msg = text))
+
+def debug_print(string):
+    if constants.IS_DEBUG_MODE:
+        print(string)
 
 def newline():
     print('')
