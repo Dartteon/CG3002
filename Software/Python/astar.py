@@ -21,9 +21,6 @@ import re
 
 TTS_DELAY = 3.5 # Text to speech delay in seconds
 
-# Base URL for map info download
-base_url = "http://showmyway.comp.nus.edu.sg/getMapInfo.php?Building=%s&Level=%s"
-
 # Initialising Text-to-Speech
 # engine = pyttsx.init()
 serial = SerialCommunicator()
@@ -69,7 +66,7 @@ def main():
 
         # Get confirmation
         confirmation = get_confirmation(buildingNameOrNumber, floorNumber, startNodeRaw)
-        if confirmation is '1':
+        if confirmation == '1':
             break
 
     # Get end details
@@ -97,7 +94,7 @@ def main():
 
         # Get confirmation
         confirmation = get_confirmation(destinationBuildingNameOrNumber, destinationFloorNumber, goalNodeRaw)
-        if confirmation is '1':
+        if confirmation == '1':
             break
 
     if (buildingNameOrNumber != destinationBuildingNameOrNumber) or (floorNumber != destinationFloorNumber):
@@ -106,6 +103,7 @@ def main():
         buildingMode = 2
     else:
         mapList = ['{building}-{floor}'.format(building = buildingNameOrNumber, floor = floorNumber)]
+
     if not constants.IS_DEBUG_MODE:
         serial.serialFlush()
         serial.handshakeWithArduino()
@@ -371,7 +369,7 @@ def get_json(buildingName, floorNumber):
         try:
             voiceOutput.addToQueue(INSTRUCTION('trying wifi', constants.HIGH_PRIORITY))
             info = None
-            url = base_url % (buildingName, floorNumber)
+            url = constants.BASE_URL.format(building = buildingName, level = floorNumber)
             response = urlopen(url)
             data = json.loads(response.read())
             debug_print(data)
@@ -382,9 +380,8 @@ def get_json(buildingName, floorNumber):
                     json.dump(data, file)
                     debug_print(data)
                 return data
-            voiceOutput.addToQueue(INSTRUCTION('wifi failed', constants.HIGH_PRIORITY))
-            pass
         except Exception as e:
+            voiceOutput.addToQueue(INSTRUCTION('wifi failed', constants.HIGH_PRIORITY))
             print e
 
 def heuristic(goalNode, nodeList):
