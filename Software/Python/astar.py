@@ -268,7 +268,8 @@ def main():
 
                 path_to_goal(nodeList, route, northAt)
                 startNodeRaw = nextStartNodeRaw
-
+                
+    voiceOutput.addToQueue(INSTRUCTION(messages.DESTINATION_REACHED, constants.HIGH_PRIORITY))
 
 class NODE:
     '''Used instead of map data for ease of use'''
@@ -546,7 +547,6 @@ def path_to_goal(nodeList, route, northAt):
         previousNode = nextNode
         isNextNodeReached = False
     # text_to_speech('You have reached the final node')
-    voiceOutput.addToQueue(INSTRUCTION(messages.DESTINATION_REACHED, constants.HIGH_PRIORITY))
 
 def to_user(instruction, audio):
     if instruction == '':
