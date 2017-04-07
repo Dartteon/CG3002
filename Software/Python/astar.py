@@ -332,13 +332,17 @@ def get_confirmation(buildingNameOrNumber, floorNumber, nodeRaw):
             voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_OUT_OF_RANGE, constants.HIGH_PRIORITY))
 
 def get_map_list(prevNode, buildingStart, floorStart, buildingEnd, floorEnd, mapList):
+    # If same building and level
     if (buildingStart == buildingEnd) and (floorStart == floorEnd):
         mapList.append('{building}-{floor}'.format(building = buildingStart, floor = floorStart))
         return
+    # Else process starting map
     startMap = get_json(buildingStart, floorStart)
     newNode = False
+    hasConnector = False
     for node in startMap['map']:
         if re.match(r'TO \w+-\d+-\d+', node['nodeName']):
+            hasConnector = True
             connector = re.findall(r'\d+', node['nodeName'][2:])
             connectingMap = connector[0] + '-' + connector[1]
             connectingNodeID = connector[2]
@@ -347,8 +351,12 @@ def get_map_list(prevNode, buildingStart, floorStart, buildingEnd, floorEnd, map
                 mapList.append('{building}-{floor}'.format(building = buildingStart, floor = floorStart))
                 # print buildingStart+'-'+floorStart
                 get_map_list(node['nodeId'], connector[0], connector[1], buildingEnd, floorEnd, mapList)
-    if not newNode:
-        mapList.pop()
+    if hasConnector:
+        if not newNode:
+            debug_print('No new connector node in {building}-{floor}'.format(building = buildingStart, floor = floorStart))
+            mapList.pop()
+    else:
+        debug_print('No connector node in {building}-{floor}'.format(building = buildingStart, floor = floorStart))
 
 def get_json(buildingName, floorNumber):
     '''Returns map data from building name and floor number'''
