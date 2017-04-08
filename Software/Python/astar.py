@@ -454,11 +454,9 @@ def path_to_goal(nodeList, route, northAt):
             step = False
             distanceAudio = False
             step = False
-            # data = received_data_from_arduino(position)
             data = request_data_from_arduino(prevTotalDistance)
             if data['distance'] > prevTotalDistance:
                 step = True
-                # text_to_speech(str(data['distance']) + ' steps')
                 msg = str(data['distance']) + ' steps'
                 prevStepsTaken = data['distance']
                 voiceOutput.addToQueue(INSTRUCTION(msg, constants.MED_PRIORITY))
@@ -466,9 +464,7 @@ def path_to_goal(nodeList, route, northAt):
                 prevTotalDistance = data['distance']
             else:
                 print(data['distance'], ' steps')
-                # text_to_speech(str(data['distance']) + ' steps')
                 msg = str(data['distance']) + ' steps'
-                # voiceOutput.addToQueue(INSTRUCTION(msg,0))
 
             if time.time() - instructionTimeStamp > TTS_DELAY:
                 instructionTimeStamp = time.time()
@@ -498,7 +494,6 @@ def path_to_goal(nodeList, route, northAt):
 
             if abs(turnAngle) > 15:
                 instruction = 'Turn ' + str(turnAngle)
-                # to_user(instruction, audio)
                 print instruction
                 if not counter:
                     voiceOutput.addToQueue(INSTRUCTION(instruction, constants.LOW_PRIORITY))
@@ -508,37 +503,18 @@ def path_to_goal(nodeList, route, northAt):
             else:
                 instruction = 'Walk ' + str(stepsToNode)
                 print str(distanceToNode)
-                # to_user(instruction, distanceAudio)
                 print instruction
                 if not counterx:
                     voiceOutput.addToQueue(INSTRUCTION(instruction, constants.LOWEST_PRIORITY))
                     counterx += 1
                 else:
                     counterx = (counterx + 1) % 4
-                # instruction =  'Turn ' + str(turnAngle) + ' degrees and walk ' + str(distanceToNode) + ' cm'
-
-                    # text_to_speech(instruction)
-
-                # direction = direction_for_user(displacement['turnAngle'])
-                # instruction = instruction_for_user(direction, displacement['distance'], nextNode.nodeId)
-
-                # print instruction
-                # if readInstruction == 1:
-                #     text_to_speech(instruction)
-
-
-                # position['x'] = int(raw_input('Current x: '))
-                # position['y'] = int(raw_input('Current y: '))
-                # position['heading'] = int(raw_input('Current heading: '))
-                # displacement = displacement_from_position(position, nextNode, northAt)
         reached_message = messages.REACHED_NEXT_NODE.format(id = str(nextNode.nodeId))
         totalNodeDistance += nodeToNode['distance']
         print reached_message
-        # text_to_speech(reached_message)
         voiceOutput.addToQueue(INSTRUCTION(reached_message, constants.HIGH_PRIORITY))
         previousNode = nextNode
         isNextNodeReached = False
-    # text_to_speech('You have reached the final node')
 
 def to_user(instruction, audio):
     if instruction == '':
@@ -557,29 +533,8 @@ def path_to_node(nextNode, previousNode, northAt):
         nodeBearing = 0
     else:
         nodeBearing = ((90 - math.degrees(math.atan2(dy, dx))) - northAt) % 360
-    # if nodeBearing > 180:
-    #     nodeBearing -= 360
-    # elif nodeBearing <= -180:
-    #     nodeBearing += 360
     nodeToNode = {'distance':int(distance), 'nodeBearing':int(nodeBearing)}
     return nodeToNode
-
-
-def received_data_from_arduino(position):
-    dataReceived = serial.serialRead()
-    # distance = dataReceived['distance']
-    # direction = dataReceived['direction']
-
-    # response = {}
-    # for i in range(len(dataReceived['dir'])):
-    #     response =  read_step_counter(dataReceived['accelx'][i], dataReceived['accelz'][i], long(dataReceived['timestamp']))
-    #     if response['status'] == 1: # Step taken
-    #         position['x'] += 75 * (math.sin(math.radians(int(dataReceived['dir']))))
-    #         position['y'] += 75 * (math.cos(math.radians(int(dataReceived['dir']))))
-    #     position['heading'] = int(dataReceived['dir'])
-
-    # print 'direction: ' + str(direction) + ' acceleration X, Y, Z: ' + str(meanAccelX) + ', ' + str(meanAccelY) + ', ' + str(meanAccelZ)
-    return dataReceived
 
 def request_data_from_arduino(prevTotalDistance):
     global distanceOffset
@@ -591,68 +546,6 @@ def request_data_from_arduino(prevTotalDistance):
     dataRequested['distance'] += distanceOffset
     debug_print(dataRequested)
     return dataRequested
-
-# def direction_for_user(turnAngle):
-#     # If angle is between -10 and 10 degrees, ignore it and let the user walks straight
-#     if turnAngle >= -20 and turnAngle <= 20:
-#         direction = 'straight'
-
-#     # Slight turn to the right and left
-#     elif turnAngle > 21 and turnAngle <=65:
-#         direction = 'slight right turn'
-#     elif turnAngle < -21 and turnAngle >= -65:
-#         direction = 'slight left turn'
-
-#     # Right angle turn to the right and left
-#     elif turnAngle > 66 and turnAngle <= 125:
-#         direction = 'right turn'
-#     elif turnAngle < -66 and turnAngle >= -125:
-#         direction = 'left turn'
-
-#     # Major turn to the right and left
-#     elif turnAngle > 126 and turnAngle <= 160:
-#         direction = 'right and further slight right turn'
-#     elif turnAngle < - 126 and turnAngle >= -160:
-#         direction = 'left and further slight left turn'
-#     else:
-#         direction = 'uturn'
-#     return direction
-
-# def instruction_for_user(direction, distance, nextNode):
-#     if direction is 'straight':
-#         instruction = 'To reach the next node (node ID ' + str(nextNode) + ') walk straight ' + str(distance) + ' cm.'
-#     else:
-#         instruction = 'To reach the next node (node ID ' + str(nextNode) + ') make a ' + direction + ' and walk ' + str(distance) + ' cm.'
-#     return instruction
-
-# def int_to_buildingName():
-#     buildingNameList = ['DemoBuilding', 'COM1', 'COM2']
-#     number = 0
-#     while (number - 1) not in range(len(buildingNameList)):
-#         try:
-#             print('Building?\n1: DemoBuilding\n2: COM1\n3: COM2')
-#             number = int(raw_input())
-#             if number - 1 not in range(len(buildingNameList)):
-#                 print 'Please enter an integer building index number from the given list.'
-#         except ValueError:
-#             print 'That was not an integer.\nPlease enter an integer building index number from the given list.'
-#         newline()
-#     return buildingNameList[number-1]
-
-# def int_to_floorNumber(buildingName):
-#     floorNumberList = {'DemoBuilding':[1, 2, 3], 'COM1':[1, 2], 'COM2':[2, 3]}
-#     floorNumber= 0
-#     while floorNumber not in floorNumberList[buildingName]:
-#         try:
-#             print 'Floor number?'
-#             print str(floorNumberList[buildingName])
-#             floorNumber = int(raw_input())
-#             if floorNumber not in floorNumberList[buildingName]:
-#                 print 'Please enter an integer floor number from the given list.'
-#         except ValueError:
-#             print 'That was not an integer.\nPlease enter an integer floor number from the given list.'
-#         newline()
-#     return floorNumber
 
 def text_to_speech(text):
     os.system("espeak -s 200 -v en+f3 '{msg}' 2>/dev/null".format(msg = text))
