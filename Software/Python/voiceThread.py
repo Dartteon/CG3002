@@ -98,7 +98,7 @@ class VoiceHandler:
 
     def addToQueue(self, instruction):
         self.voiceLock.acquire()
-        if self.instruction.priority == constants.MED_PRIORITY:
+        if instruction.priority == constants.MED_PRIORITY:
             if self.voiceStepQueue.empty():
                 print 'step queue empty.'
                 self.voiceStepQueue.put(instruction)
@@ -116,7 +116,7 @@ class VoiceHandler:
                 self.voiceQueue.put(instruction)
                 self.previousInstruction = instruction
             elif self.previousInstruction.priority > instruction.priority and self.previousInstruction.message != instruction.message:
-                self.voieQueue.queue.clear()
+                self.voiceQueue.queue.clear()
                 self.voiceQueue.put(instruction)
                 self.previousInstruction = instruction
         self.voiceLock.release()
