@@ -22,34 +22,34 @@ bool DEBUG_ARDUINO_ONLY = false;
 #define trigPin1 26
 #define echoPin1 27
 #define motorPin1 28
+#define MAX_DISTANCE_ARM_L 50
 
 // Mid Arm
 #define trigPin2 22
 #define echoPin2 23
 #define motorPin2 24
-//#define trigPin2 49
-//#define echoPin2 48
-//#define motorPin2 51
+#define MAX_DISTANCE_MID 100
 
 // Right Arm
 #define trigPin3 32
 #define echoPin3 34
 #define motorPin3 35
+#define MAX_DISTANCE_ARM_R 50
 
 //Left Leg
 #define trigPin4 40
 #define echoPin4 41
 #define motorPin4 43
+#define MAX_DISTANCE_LEG_L 100
 
 //Right Leg
 #define trigPin5 45
 #define echoPin5 44
 #define motorPin5 47
+#define MAX_DISTANCE_LEG_R 100
 
 long rightArmSensor, frontSensor, leftArmSensor,
      leftLegSensor, rightLegSensor;
-int DIST_THRESHOLD_SIDES = 100;
-int DIST_THRESHOLD_MID = 100;
 int DURATION_TIMEOUT_SENSOR = 3000;
 float TIMEOUT_MULTIPLIER = 1.96; //50cm for each multiple
 
@@ -62,11 +62,11 @@ unsigned long pingTimer[SONAR_NUM]; // When each pings.
 unsigned int cm[SONAR_NUM]; // Store ping distances.
 uint8_t currentSensor = 0; // Which sensor is active.
 NewPing sonar[SONAR_NUM] = { // Sensor object array.
-  NewPing(trigPin1, echoPin1, MAX_DISTANCE),
-  NewPing(trigPin2, echoPin2, MAX_DISTANCE),
-  NewPing(trigPin3, echoPin3, MAX_DISTANCE),
-  NewPing(trigPin4, echoPin4, MAX_DISTANCE),
-  NewPing(trigPin5, echoPin5, MAX_DISTANCE)
+  NewPing(trigPin1, echoPin1, MAX_DISTANCE_ARM_L),
+  NewPing(trigPin2, echoPin2, MAX_DISTANCE_MID),
+  NewPing(trigPin3, echoPin3, MAX_DISTANCE_ARM_R),
+  NewPing(trigPin4, echoPin4, MAX_DISTANCE_LEG_L),
+  NewPing(trigPin5, echoPin5, MAX_DISTANCE_LEG_R)
 };
 int motorPins[SONAR_NUM];
 
@@ -120,131 +120,6 @@ SemaphoreHandle_t xSemaphore = NULL;
 QueueHandle_t xQueue = NULL;
 
 //  ===============================  Hardware Functions  ===============================
-
-void SonarSensor(int trigPin, int echoPin) {
-//  distance = 9999;
-//  digitalWrite(trigPin, LOW);
-//  delayMicroseconds(2);
-//  digitalWrite(trigPin, HIGH);
-//  delayMicroseconds(10);
-//  digitalWrite(trigPin, LOW);
-//  int timeOut = DURATION_TIMEOUT_SENSOR;
-//  timeOut *= TIMEOUT_MULTIPLIER;
-//  //if (trigPin == trigPin2 || trigPin == trigPin4 || trigPin == trigPin5) timeOut *= 2;
-//  duration = pulseIn(echoPin, HIGH, timeOut);
-//  if (duration == 0)
-//    duration = timeOut;
-//  distance = (duration / 2) / 29.1;
-}
-
-//void readSensor(int i) {
-//  int trigPin;
-//  int echoPin;
-//  int distance1 = 9999;
-//  int duration1 = 9999;
-//  int distance2 = 9999;
-//  int duration2 = 9999;
-//  int distance3 = 9999;
-//  int duration3 = 9999;
-//  int distance4 = 9999;
-//  int duration4 = 9999;
-//  int distance5 = 9999;
-//  int duration5 = 9999;
-//  int timeOut = DURATION_TIMEOUT_SENSOR;
-//  timeOut *= TIMEOUT_MULTIPLIER;
-//  switch (i) {
-//    case 0:
-//      trigPin = trigPin1;
-//      echoPin = echoPin1;
-//      //============== SonarSensor
-//      digitalWrite(trigPin, LOW);
-//      delayMicroseconds(2);
-//      digitalWrite(trigPin, HIGH);
-//      delayMicroseconds(10);
-//      digitalWrite(trigPin, LOW);
-//      duration1 = pulseIn(echoPin, HIGH, timeOut);
-//      if (duration1 == 0) duration1 = timeOut;
-//      distance1 = (duration1 / 2) / 29.1;
-//      //============== EndSonarSensor
-//      leftArmSensor = (duration1 / 2) / 29.1;
-//      digitalWrite(motorPin1, (leftArmSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-//      Serial.print("Left Arm - ");
-//      Serial.println(leftArmSensor);
-//      break;
-//    case 1:
-//      trigPin = trigPin2;
-//      echoPin = echoPin2;
-//      //============== SonarSensor
-//      digitalWrite(trigPin, LOW);
-//      delayMicroseconds(2);
-//      digitalWrite(trigPin, HIGH);
-//      delayMicroseconds(10);
-//      digitalWrite(trigPin, LOW);
-//      duration2 = pulseIn(echoPin, HIGH, timeOut);
-//      if (duration2 == 0) duration2 = timeOut;
-//      distance2 = (duration2 / 2) / 29.1;
-//      //============== EndSonarSensor
-//      frontSensor = (duration2 / 2) / 29.1;
-//      digitalWrite(motorPin2, (frontSensor <= DIST_THRESHOLD_MID) ? HIGH : LOW);
-//      Serial.print("Front - ");
-//      Serial.println(frontSensor);
-//      break;
-//    case 2:
-//      trigPin = trigPin3;
-//      echoPin = echoPin3;
-//      //============== SonarSensor
-//      digitalWrite(trigPin, LOW);
-//      delayMicroseconds(2);
-//      digitalWrite(trigPin, HIGH);
-//      delayMicroseconds(10);
-//      digitalWrite(trigPin, LOW);
-//      duration3 = pulseIn(echoPin, HIGH, timeOut);
-//      if (duration3 == 0) duration3 = timeOut;
-//      distance3 = (duration3 / 2) / 29.1;
-//      //============== EndSonarSensor
-//      rightArmSensor = (duration3 / 2) / 29.1;
-//      digitalWrite(motorPin3, (rightArmSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-//      Serial.print("Right Arm - ");
-//      Serial.println(rightArmSensor);
-//      break;
-//    case 3:
-//      trigPin = trigPin4;
-//      echoPin = echoPin4;
-//      //============== SonarSensor
-//      digitalWrite(trigPin, LOW);
-//      delayMicroseconds(2);
-//      digitalWrite(trigPin, HIGH);
-//      delayMicroseconds(10);
-//      digitalWrite(trigPin, LOW);
-//      duration4 = pulseIn(echoPin, HIGH, timeOut);
-//      if (duration4 == 0) duration4 = timeOut;
-//      distance4 = (duration4 / 2) / 29.1;
-//      //============== EndSonarSensor
-//      leftLegSensor = (duration4 / 2) / 29.1;
-//      digitalWrite(motorPin4, (leftLegSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-//      Serial.print("Left Leg - ");
-//      Serial.println(leftLegSensor);
-//      break;
-//    case 4:
-//      trigPin = trigPin5;
-//      echoPin = echoPin5;
-//      //============== SonarSensor
-//      digitalWrite(trigPin, LOW);
-//      delayMicroseconds(2);
-//      digitalWrite(trigPin, HIGH);
-//      delayMicroseconds(10);
-//      digitalWrite(trigPin, LOW);
-//      duration5 = pulseIn(echoPin, HIGH, timeOut);
-//      if (duration5 == 0) duration5 = timeOut;
-//      distance5 = (duration5 / 2) / 29.1;
-//      //============== EndSonarSensor
-//      rightLegSensor = (duration5 / 2) / 29.1;
-//      digitalWrite(motorPin5, (rightLegSensor <= DIST_THRESHOLD_SIDES) ? HIGH : LOW);
-//      Serial.print("Right Leg - ");
-//      Serial.println(rightLegSensor);
-//      break;
-//  }
-//}
 void echoCheck() { // If ping echo, set distance to array.
   if (sonar[currentSensor].check_timer())
     cm[currentSensor] = sonar[currentSensor].ping_result / US_ROUNDTRIP_CM;
@@ -252,7 +127,8 @@ void echoCheck() { // If ping echo, set distance to array.
 void oneSensorCycle() { // Do something with the results.
   for (uint8_t i = 0; i < SONAR_NUM; i++) {
     unsigned int currDist = cm[i];
-    digitalWrite(motorPins[i], (currDist > MIN_DISTANCE && currDist <= MAX_DISTANCE));
+    int maxDist = (i == 0 || i == 1) ? MAX_DISTANCE_ARM_L : MAX_DISTANCE_MID;
+    digitalWrite(motorPins[i], (currDist > MIN_DISTANCE && currDist <= maxDist));
     Serial.print(cm[i]);
     Serial.print(" ");
   }
@@ -260,21 +136,6 @@ void oneSensorCycle() { // Do something with the results.
 }
 
 // ================= Accelerometer
-
-//// Hardware-Firmware API: Put Data into Firmware Storage
-//void addStepCountData(int dir, int accelx, int accely, int accelz,
-//		long timestamp) {
-//	Serial.println("addStepCountData");
-//
-//	stepCountStorage.dir[sc_pos_packet] = dir;
-//	stepCountStorage.accelx[sc_pos_packet] = accelx;
-//	stepCountStorage.accely[sc_pos_packet] = accely;
-//	stepCountStorage.accelz[sc_pos_packet] = accelz;
-//	stepCountStorage.timestamp[sc_pos_packet] = timestamp;
-//
-//	sc_pos_packet = (sc_pos_packet + 1) % MAX_STORAGE_SIZE;
-//}
-
 void calculateNewXThreshold() {
   xDynamicThreshold = (xMax + xMin) / 2;
   //	Serial.print("xDynamicThreshold = ");
@@ -419,7 +280,7 @@ void getAccelReadings(void *p) {
     //}
 
     xSemaphoreGive(xSemaphore);
-    vTaskDelay(5);
+    vTaskDelay(4);
   }
 }
 
@@ -444,7 +305,7 @@ void getSensorReadings(void *p) {
     }
     
     xSemaphoreGive(xSemaphore);
-    vTaskDelay(4);
+    vTaskDelay(1);
   }
 }
 
@@ -472,11 +333,11 @@ static void initialize() {
       msg = 'a';
       Serial1.write(msg);
     }
-    else {
-      Serial.println("Unexpected handshake protocol sequence, forced bypass");
-      msg = 'a';
-      Serial1.write(msg);
-    }
+//    else {
+//      Serial.println("Unexpected handshake protocol sequence, forced bypass");
+//      msg = 'a';
+//      Serial1.write(msg);
+//    }
 
     Serial.println("Expecting 'a'");
     while (!Serial1.available()) {
@@ -485,10 +346,11 @@ static void initialize() {
     Serial.println((char) msg);
     if (msg == 'a') {
       initFlag = false;
-    } else {
-      Serial.println("Unexpected handshake protocol sequence, forced bypass");
-      initFlag = false;
-    }
+    } 
+//    else {
+//      Serial.println("Unexpected handshake protocol sequence, forced bypass");
+//      initFlag = false;
+//    }
   }
 }
 
