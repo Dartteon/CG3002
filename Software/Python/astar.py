@@ -485,7 +485,7 @@ def path_to_goal(nodeList, route, northAt):
             else:
                 print(data['distance'], ' steps')
                 msg = str(data['distance']) + ' steps'
-    
+
             if time.time() - instructionTimeStamp > TTS_DELAY:
                 instructionTimeStamp = time.time()
                 audio = True
@@ -498,7 +498,7 @@ def path_to_goal(nodeList, route, northAt):
             if distanceToNode <= 0:
                 # break
                 isNextNodeReached = True
-            turnAngle = nodeToNode['nodeBearing'] - data['direction'] + 0 #offset (reset to 0 for testing)
+            turnAngle = nodeToNode['nodeBearing'] - data['direction'] - 20 #offset (reset to 0 for testing)
             if turnAngle > 180:
                 turnAngle -= 360
             elif turnAngle <= -180:
