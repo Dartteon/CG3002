@@ -427,22 +427,6 @@ def get_route(goalNode, nodeList):
     route.reverse()
     return route
 
-# def displacement_from_position(position, node, northAt):
-#     dx = node.x - position['x']
-#     dy = node.y - position['y']
-#     distance = ((dx**2 + dy**2)**0.5)
-#     if distance == 0.0:
-#         turnAngle = 0
-#     else:
-#         bearing = ((90 - math.degrees(math.atan2(dy, dx))) - northAt) % 360
-#         turnAngle = bearing - position['heading']
-#     if turnAngle > 180:
-#         turnAngle -= 360
-#     elif turnAngle <= -180:
-#         turnAngle += 360
-#     displacement = {'distance':int(distance), 'turnAngle':int(turnAngle)}
-#     return displacement
-
 def path_to_goal(nodeList, route, northAt):
     global totalNodeDistance
     index = 0
