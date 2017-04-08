@@ -461,16 +461,6 @@ def path_to_goal(nodeList, route, northAt):
             distanceAudio = False
             step = False
             data = request_data_from_arduino(prevTotalDistance)
-            if data['distance'] > prevTotalDistance:
-                step = True
-                msg = str(data['distance']) + ' steps'
-                prevStepsTaken = data['distance']
-                voiceOutput.addToQueue(INSTRUCTION(msg, constants.MED_PRIORITY))
-                print(data['distance'], ' steps')
-                prevTotalDistance = data['distance']
-            else:
-                print(data['distance'], ' steps')
-                msg = str(data['distance']) + ' steps'
 
             if time.time() - instructionTimeStamp > TTS_DELAY:
                 instructionTimeStamp = time.time()
@@ -489,10 +479,26 @@ def path_to_goal(nodeList, route, northAt):
             else:
                 stepsToNode = int(distanceToNode/constants.STRIDE_LENGTH)
 
+            if data['distance'] > prevTotalDistance:
+                step = True
+                msg = str(data['distance']) + ' steps'
+                prevStepsTaken = data['distance']
+
+                instruction = 'Walk ' + str(stepsToNode)
+                print str(distanceToNode)
+                print instruction
+                voiceOutput.addToQueue(INSTRUCTION(instruction, constants.MED_PRIORITY))
+
+                print(data['distance'], ' steps')
+                prevTotalDistance = data['distance']
+            else:
+                print(data['distance'], ' steps')
+                msg = str(data['distance']) + ' steps'
+
             if distanceToNode <= 0:
                 # break
                 isNextNodeReached = True
-            turnAngle = nodeToNode['nodeBearing'] - data['direction'] + 20 #offset
+            turnAngle = nodeToNode['nodeBearing'] - data['direction'] + 0 #offset (reset to 0 for testing)
             if turnAngle > 180:
                 turnAngle -= 360
             elif turnAngle <= -180:
