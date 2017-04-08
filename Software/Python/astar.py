@@ -462,15 +462,6 @@ def path_to_goal(nodeList, route, northAt):
             step = False
             data = request_data_from_arduino(prevTotalDistance)
 
-            if time.time() - instructionTimeStamp > TTS_DELAY:
-                instructionTimeStamp = time.time()
-                audio = True
-            if time.time() - distanceTimeStamp > 2 * TTS_DELAY:
-                if not step:
-                    if not audio:
-                        distanceTimeStamp = time.time()
-                        distanceAudio = True
-
             distanceToNode = nodeToNode['distance'] - (data['distance'] * constants.STRIDE_LENGTH - totalNodeDistance)
 
             if distanceToNode < constants.STRIDE_LENGTH:
@@ -494,6 +485,15 @@ def path_to_goal(nodeList, route, northAt):
             else:
                 print(data['distance'], ' steps')
                 msg = str(data['distance']) + ' steps'
+    
+            if time.time() - instructionTimeStamp > TTS_DELAY:
+                instructionTimeStamp = time.time()
+                audio = True
+            if time.time() - distanceTimeStamp > 2 * TTS_DELAY:
+                if not step:
+                    if not audio:
+                        distanceTimeStamp = time.time()
+                        distanceAudio = True
 
             if distanceToNode <= 0:
                 # break
