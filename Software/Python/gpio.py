@@ -87,8 +87,10 @@ class Keypad():
                 else:
                     next_state = 1
                     if '#' in digit:
-                        return inputBuffer
-                    inputBuffer += digit
+                        if inputBuffer != "":
+                            return inputBuffer
+                    else:
+                        inputBuffer += digit
             else:
                 if(digit == None):
                     next_state = 0
