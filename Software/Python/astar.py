@@ -341,17 +341,23 @@ def get_map_list(prevNode, buildingStart, floorStart, buildingEnd, floorEnd, map
     startMap = get_json(buildingStart, floorStart)
     newNode = False
     hasConnector = False
-    for node in startMap['map']:
-        if re.match(r'TO \w+-\d+-\d+', node['nodeName']):
-            hasConnector = True
-            connector = re.findall(r'\d+', node['nodeName'][2:])
-            connectingMap = connector[0] + '-' + connector[1]
-            connectingNodeID = connector[2]
-            if prevNode != connectingNodeID:
-                newNode = True
-                mapList.append('{building}-{floor}'.format(building = buildingStart, floor = floorStart))
-                # print buildingStart+'-'+floorStart
-                get_map_list(node['nodeId'], connector[0], connector[1], buildingEnd, floorEnd, mapList)
+    try:
+        for node in startMap['map']:
+            if re.match(r'TO \w+-\d+-\d+', node['nodeName']):
+                hasConnector = True
+                connector = re.findall(r'\d+', node['nodeName'][2:])
+                connectingMap = connector[0] + '-' + connector[1]
+                connectingNodeID = connector[2]
+                if prevNode != connectingNodeID:
+                    newNode = True
+                    mapList.append('{building}-{floor}'.format(building = buildingStart, floor = floorStart))
+                    # print buildingStart+'-'+floorStart
+                    get_map_list(node['nodeId'], connector[0], connector[1], buildingEnd, floorEnd, mapList)
+    except Exception as e:
+        print e
+        debug_print('No map {building}-{floor}'.format(building = buildingStart, floor = floorStart))
+        mapList.pop()
+        return
     if hasConnector:
         if not newNode:
             debug_print('No new connector node in {building}-{floor}'.format(building = buildingStart, floor = floorStart))
