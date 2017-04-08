@@ -55,23 +55,24 @@ class VoiceHandler:
             self.voiceLock.acquire()
             # If step queue is empty
             if self.voiceStepQueue.empty():
+                print 'voiceStepQueue empty'
                 # If standard queue is empty
                 if self.voiceQueue.empty():
-                    pass
+                    print 'voiceQueue empty'
                 elif self.lastProcess is None:
-                    print('From voiceQueue, no last process')
+                    print 'From voiceQueue, no last process'
                     message = self.voiceQueue.get().message
                     self.sayMessage(message)
                 elif self.lastProcess is not None and self.isProcessDone():
-                    print('From voiceQueue, last process done')
+                    print 'From voiceQueue, last process done'
                     message = self.voiceQueue.get().message
                     self.sayMessage(message)
             elif self.lastProcess is None:
-                print('From voiceStepQueue, no last process')
+                print 'From voiceStepQueue, no last process'
                 stepMessage = self.voiceStepQueue.get().message
                 self.sayMessage(stepMessage)
             elif self.lastProcess is not None and self.isProcessDone():
-                print('From voiceStepQueue, last process done')
+                print 'From voiceStepQueue, last process done'
                 stepMessage = self.voiceStepQueue.get().message
                 self.sayMessage(stepMessage)
             self.voiceLock.release()
