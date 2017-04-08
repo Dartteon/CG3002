@@ -77,8 +77,8 @@ class SerialCommunicator():
                     if (checksumPi == jsonO['checksum']):
                         msg = 'a'
                         dataFlag = True
-                    print(jsonO['checksum'])
-                    print(checksumPi)
+                    #print(jsonO['checksum'])
+                    #print(checksumPi)
                     self.serial1.write(msg)
                     return jsonO
                 except:

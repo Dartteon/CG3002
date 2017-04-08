@@ -55,24 +55,19 @@ class VoiceHandler:
             self.voiceLock.acquire()
             # If step queue is empty
             if self.voiceStepQueue.empty():
-                print 'voiceStepQueue empty'
                 # If standard queue is empty
                 if self.voiceQueue.empty():
-                    print 'voiceQueue empty'
+                    pass
                 elif self.lastProcess is None:
-                    print 'From voiceQueue, no last process'
                     message = self.voiceQueue.get().message
                     self.sayMessage(message)
                 elif self.lastProcess is not None and self.isProcessDone():
-                    print 'From voiceQueue, last process done'
                     message = self.voiceQueue.get().message
                     self.sayMessage(message)
             elif self.lastProcess is None:
-                print 'From voiceStepQueue, no last process'
                 stepMessage = self.voiceStepQueue.get().message
                 self.sayMessage(stepMessage)
             elif self.lastProcess is not None and self.isProcessDone():
-                print 'From voiceStepQueue, last process done'
                 stepMessage = self.voiceStepQueue.get().message
                 self.sayMessage(stepMessage)
             self.voiceLock.release()
@@ -105,7 +100,6 @@ class VoiceHandler:
         self.voiceLock.acquire()
         if instruction.priority == constants.MED_PRIORITY:
             if self.voiceStepQueue.empty():
-                print 'step queue empty.'
                 self.voiceStepQueue.put(instruction)
                 self.previousInstruction = instruction
             else:
@@ -114,7 +108,6 @@ class VoiceHandler:
                 self.previousInstruction = instruction
         else:
             if self.voiceQueue.empty():
-                print 'queue empty.'
                 self.voiceQueue.put(instruction)
                 self.previousInstruction = instruction
             elif self.previousInstruction.priority == instruction.priority and self.previousInstruction.message != instruction.message:
@@ -127,7 +120,7 @@ class VoiceHandler:
         self.voiceLock.release()
 
     def sayMessage(self, message):
-        print 'Voice output: ' + message
+        print 'Voice Output: ' + message
         if not constants.IS_DEBUG_MODE:
             voiceCmd = ttsTemplate.format(msg = message)
             self.lastProcess = subprocess.Popen(voiceCmd, shell=True, stdout=subprocess.PIPE, preexec_fn=os.setsid)

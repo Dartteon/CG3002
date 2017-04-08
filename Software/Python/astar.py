@@ -474,10 +474,7 @@ def path_to_goal(nodeList, route, northAt):
                 step = True
                 msg = str(data['distance']) + ' steps'
                 prevStepsTaken = data['distance']
-
                 instruction = 'Walk ' + str(stepsToNode)
-                print str(distanceToNode)
-                print instruction
                 voiceOutput.addToQueue(INSTRUCTION(instruction, constants.MED_PRIORITY))
 
                 print(data['distance'], ' steps')
