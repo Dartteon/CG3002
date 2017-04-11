@@ -587,7 +587,8 @@ def request_data_from_arduino(prevTotalDistance):
     return dataRequested
 
 def text_to_speech(text):
-    os.system("espeak -s 200 -v en+f3 '{msg}' 2>/dev/null".format(msg = text))
+    if not constants.IS_DEBUG_MODE:
+        os.system("espeak -s 200 -v en+f3 '{msg}' 2>/dev/null".format(msg = text))
 
 def debug_print(input):
     if constants.IS_DEBUG_MODE:
