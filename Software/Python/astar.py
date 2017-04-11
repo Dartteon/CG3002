@@ -44,26 +44,41 @@ def main():
     # Get start details
     buildingMode = 1
     while True:
-        # Get building
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER.format(type = 'starting'), constants.HIGH_PRIORITY))
-        print('Starting building name or number: ')
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_PROMPT.format(type = 'starting'), constants.HIGH_PRIORITY))
+        print('Enter starting details: (building) (level) (node ID)')
+
         buildingNameOrNumber = str(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(buildingNameOrNumber, constants.HIGH_PRIORITY))
         time.sleep(1)
 
-        # Get floor
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL.format(type = 'starting'), constants.HIGH_PRIORITY))
-        print('Starting floor number: ')
         floorNumber = str(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(floorNumber, constants.HIGH_PRIORITY))
         time.sleep(1)
 
-        # Get start node
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, constants.HIGH_PRIORITY))
-        print('Start node ID: ')
         startNodeRaw = int(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(str(startNodeRaw), constants.HIGH_PRIORITY))
         time.sleep(1)
+
+        # # Get building
+        # voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER.format(type = 'starting'), constants.HIGH_PRIORITY))
+        # print('Starting building name or number: ')
+        # buildingNameOrNumber = str(keypad.getKeysInput())
+        # voiceOutput.addToQueue(INSTRUCTION(buildingNameOrNumber, constants.HIGH_PRIORITY))
+        # time.sleep(1)
+        #
+        # # Get floor
+        # voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL.format(type = 'starting'), constants.HIGH_PRIORITY))
+        # print('Starting floor number: ')
+        # floorNumber = str(keypad.getKeysInput())
+        # voiceOutput.addToQueue(INSTRUCTION(floorNumber, constants.HIGH_PRIORITY))
+        # time.sleep(1)
+        #
+        # # Get start node
+        # voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_START_NODE, constants.HIGH_PRIORITY))
+        # print('Start node ID: ')
+        # startNodeRaw = int(keypad.getKeysInput())
+        # voiceOutput.addToQueue(INSTRUCTION(str(startNodeRaw), constants.HIGH_PRIORITY))
+        # time.sleep(1)
 
         # Get confirmation
         confirmation = get_confirmation(buildingNameOrNumber, floorNumber, startNodeRaw)
@@ -72,26 +87,41 @@ def main():
 
     # Get end details
     while True:
-        # Get building
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER.format(type = 'destination'), constants.HIGH_PRIORITY))
-        print('Destination building name or number: ')
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_PROMPT.format(type = 'starting'), constants.HIGH_PRIORITY))
+        print('Enter starting details: (building) (level) (node ID)')
+
         destinationBuildingNameOrNumber = str(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(destinationBuildingNameOrNumber, constants.HIGH_PRIORITY))
         time.sleep(1)
 
-        # Get floor
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL.format(type = 'destination'), constants.HIGH_PRIORITY))
-        print('Destination floor number: ')
         destinationFloorNumber = str(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(destinationFloorNumber, constants.HIGH_PRIORITY))
         time.sleep(1)
 
-        # Get end node
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, constants.HIGH_PRIORITY))
-        print('Goal node ID: ')
         goalNodeRaw = int(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(str(goalNodeRaw), constants.HIGH_PRIORITY))
         time.sleep(1)
+
+        # # Get building
+        # voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_NUMBER.format(type = 'destination'), constants.HIGH_PRIORITY))
+        # print('Destination building name or number: ')
+        # destinationBuildingNameOrNumber = str(keypad.getKeysInput())
+        # voiceOutput.addToQueue(INSTRUCTION(destinationBuildingNameOrNumber, constants.HIGH_PRIORITY))
+        # time.sleep(1)
+        #
+        # # Get floor
+        # voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_BUILDING_LEVEL.format(type = 'destination'), constants.HIGH_PRIORITY))
+        # print('Destination floor number: ')
+        # destinationFloorNumber = str(keypad.getKeysInput())
+        # voiceOutput.addToQueue(INSTRUCTION(destinationFloorNumber, constants.HIGH_PRIORITY))
+        # time.sleep(1)
+        #
+        # # Get end node
+        # voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_END_NODE, constants.HIGH_PRIORITY))
+        # print('Goal node ID: ')
+        # goalNodeRaw = int(keypad.getKeysInput())
+        # voiceOutput.addToQueue(INSTRUCTION(str(goalNodeRaw), constants.HIGH_PRIORITY))
+        # time.sleep(1)
 
         # Get confirmation
         confirmation = get_confirmation(destinationBuildingNameOrNumber, destinationFloorNumber, goalNodeRaw)
