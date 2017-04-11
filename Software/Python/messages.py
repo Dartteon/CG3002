@@ -7,6 +7,7 @@ INPUT_BUILDING_LEVEL = 'Please enter the {type} building level.'
 INPUT_START_NODE = 'Please enter your starting node.'
 INPUT_END_NODE = 'Please enter your ending node'
 INPUT_CONFIRMATION = 'You have entered building {building} and floor {floor} and node {node}. Enter 1 to confirm, enter 2 to try again.'
+INPUT_PROMPT = 'Please enter the {type} details.'
 
 ####################
 # GUIDING MESSAGES
