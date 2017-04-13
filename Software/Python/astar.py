@@ -520,7 +520,7 @@ def path_to_goal(nodeList, route, northAt):
             elif turnAngle <= -180:
                 turnAngle += 360
 
-            if abs(turnAngle) > 10:
+            if abs(turnAngle) > constants.ANGLE_TOLERANCE:
                 instruction = 'Turn ' + str(turnAngle)
                 print instruction
                 if time.time() - instructionTimeStamp > constants.TURN_INSTRUCTION_DELAY:

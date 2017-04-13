@@ -112,10 +112,10 @@ class VoiceHandler:
             if self.voiceQueue.empty():
                 self.voiceQueue.put(instruction)
                 self.previousInstruction = instruction
-            elif self.previousInstruction.priority == instruction.priority and self.previousInstruction.message != instruction.message:
-                self.voiceQueue.put(instruction)
-                self.previousInstruction = instruction
-            elif self.previousInstruction.priority > instruction.priority and self.previousInstruction.message != instruction.message:
+            # elif self.previousInstruction.priority == instruction.priority and self.previousInstruction.message != instruction.message:
+            #     self.voiceQueue.put(instruction)
+            #     self.previousInstruction = instruction
+            elif self.previousInstruction.priority >= instruction.priority and self.previousInstruction.message != instruction.message:
                 self.voiceQueue.queue.clear()
                 self.voiceQueue.put(instruction)
                 self.previousInstruction = instruction
