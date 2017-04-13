@@ -191,7 +191,7 @@ def main():
 
         #Loop
         while mapList:
-            print mapList
+            print 'Remaining maps: ' + mapList
             if len(mapList) == 1:
                 currMap = mapList.pop(0)
                 voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
@@ -243,13 +243,13 @@ def main():
             else:
                 currMap = mapList.pop(0)
                 voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
-                print currMap
+                print 'Now at map ' + currMap
                 jsonmap = get_json(currMap.split('-')[0], currMap.split('-')[1])
                 info = jsonmap['info']
                 print info
                 northAt = int(info['northAt'])
                 nodeList = get_nodes(jsonmap)
-                print jsonmap
+                # print jsonmap
                 for node in nodeList:
                     print node.nodeName
                     goalName = 'TO '+mapList[0]
@@ -404,7 +404,7 @@ def get_json(buildingName, floorNumber):
         fileName += str(buildingName) + '-' + str(floorNumber) + '.json'
         with open(fileName, 'r') as file:
             data = json.load(file)
-            debug_print(data)
+            # debug_print(data)
         return data
     except Exception as e:
         voiceOutput.addToQueue(INSTRUCTION('cache failed', constants.HIGH_PRIORITY))
