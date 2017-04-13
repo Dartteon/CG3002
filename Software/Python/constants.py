@@ -19,21 +19,22 @@ USELESS = 9999
 
 class PRIORITIES:
     numberOf = 6
-    # HIGHEST PRIORITY
     (
+    # HIGHEST PRIORITY
     INIT,
     DESTINATION,
     NODE,
     STEP_HIGH,
     TURN,
     STEP_LOW,
-    ) = range(numberOf)
     # LOWEST PRIORITY
+    ) = range(numberOf)
+
 
 ##################
 #BOOLEAN CONSTANTS
 ##################
-IS_DEBUG_MODE = False
+IS_DEBUG_MODE = True
 
 #################
 #STRING CONSTANTS
