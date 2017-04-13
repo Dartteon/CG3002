@@ -1,0 +1,9 @@
+*.pyc
+Software/Python/Firmware_Receiver.1.1.py
+Software/Python/astar.1.1.py
+Software/Python/astar.1.2.py
+Software/Python/testcurse.py
+Software/Python/testcurse.py.save
+Software/Python/voiceThread.1.1.py
+Firmware/Firmware_Hardware_Integration/Firmware_Hardware_Arduino - Copy.cpp
+Firmware/Firmware_Hardware_Integration/Firmware_Hardware_Arduino/Firmware_Hardware_Arduino.ino

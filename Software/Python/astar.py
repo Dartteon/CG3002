@@ -19,8 +19,6 @@ from gpio import Keypad
 # from initialisation import get_confirmation
 import re
 
-TTS_DELAY = 3.5 # Text to speech delay in seconds
-
 # Initialising Text-to-Speech
 # engine = pyttsx.init()
 serial = SerialCommunicator()
@@ -87,8 +85,8 @@ def main():
 
     # Get end details
     while True:
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_PROMPT.format(type = 'starting'), constants.HIGH_PRIORITY))
-        print('Enter starting details: (building) (level) (node ID)')
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_PROMPT.format(type = 'ending'), constants.HIGH_PRIORITY))
+        print('Enter ending details: (building) (level) (node ID)')
 
         destinationBuildingNameOrNumber = str(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(destinationBuildingNameOrNumber, constants.HIGH_PRIORITY))
@@ -516,7 +514,7 @@ def path_to_goal(nodeList, route, northAt):
             if distanceToNode <= 0:
                 # break
                 isNextNodeReached = True
-            turnAngle = nodeToNode['nodeBearing'] - data['direction'] - 20 #offset (reset to 0 for testing)
+            turnAngle = nodeToNode['nodeBearing'] - data['direction'] + constants.ANGLE_OFFSET #offset (reset to 0 for testing)
             if turnAngle > 180:
                 turnAngle -= 360
             elif turnAngle <= -180:

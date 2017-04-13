@@ -100,9 +100,11 @@ class VoiceHandler:
         self.voiceLock.acquire()
         if instruction.priority == constants.MED_PRIORITY:
             if self.voiceStepQueue.empty():
+                self.voiceQueue.queue.clear()
                 self.voiceStepQueue.put(instruction)
                 self.previousInstruction = instruction
             else:
+                self.voiceQueue.queue.clear()
                 self.voiceStepQueue.queue.clear()
                 self.voiceStepQueue.put(instruction)
                 self.previousInstruction = instruction
