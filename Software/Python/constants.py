@@ -34,7 +34,7 @@ class PRIORITIES:
 ##################
 #BOOLEAN CONSTANTS
 ##################
-IS_DEBUG_MODE = True
+IS_DEBUG_MODE = False
 
 #################
 #STRING CONSTANTS
