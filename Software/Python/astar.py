@@ -513,15 +513,6 @@ def path_to_goal(nodeList, route, northAt):
                 print(data['distance'], ' steps')
                 msg = str(data['distance']) + ' steps'
 
-            if time.time() - instructionTimeStamp > TTS_DELAY:
-                instructionTimeStamp = time.time()
-                audio = True
-            if time.time() - distanceTimeStamp > 2 * TTS_DELAY:
-                if not step:
-                    if not audio:
-                        distanceTimeStamp = time.time()
-                        distanceAudio = True
-
             if distanceToNode <= 0:
                 # break
                 isNextNodeReached = True
@@ -534,20 +525,17 @@ def path_to_goal(nodeList, route, northAt):
             if abs(turnAngle) > 10:
                 instruction = 'Turn ' + str(turnAngle)
                 print instruction
-                if not counter:
+                if time.time() - instructionTimeStamp > constants.TURN_INSTRUCTION_DELAY:
                     voiceOutput.addToQueue(INSTRUCTION(instruction, constants.LOW_PRIORITY))
-                    counter += 1
-                else:
-                    counter = (counter + 1) % 4
+                    instructionTimeStamp = time.time()
             else:
                 instruction = 'Walk ' + str(stepsToNode)
                 print str(distanceToNode)
                 print instruction
-                if not counterx:
+                if time.time() - distanceTimeStamp > constants.WALK_INSTRUCTION_DELAY:
                     voiceOutput.addToQueue(INSTRUCTION(instruction, constants.LOWEST_PRIORITY))
-                    counterx += 1
-                else:
-                    counterx = (counterx + 1) % 4
+                    distanceTimeStamp = time.time()
+
         reached_message = messages.REACHED_NEXT_NODE.format(id = str(nextNode.nodeId))
         totalNodeDistance += nodeToNode['distance']
         print reached_message
