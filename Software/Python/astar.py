@@ -523,7 +523,7 @@ def path_to_goal(nodeList, route, northAt):
             if distanceToNode <= 0:
                 # break
                 isNextNodeReached = True
-            turnAngle = nodeToNode['nodeBearing'] - data['direction'] - 20 #offset (reset to 0 for testing)
+            turnAngle = nodeToNode['nodeBearing'] - data['direction'] + constants.ANGLE_OFFSET #offset (reset to 0 for testing)
             if turnAngle > 180:
                 turnAngle -= 360
             elif turnAngle <= -180:

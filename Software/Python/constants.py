@@ -5,6 +5,7 @@
 SPEECH_DELAY = 0.5
 STRIDE_LENGTH = 60.0 # Stride length in cm
 TTS_DELAY = 3.5 # Text to speech delay in seconds
+ANGLE_OFFSET = 0 # Direct offset to every angle reading
 
 ####################
 # PRIORITY CONSTANTS
