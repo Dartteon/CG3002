@@ -85,8 +85,8 @@ def main():
 
     # Get end details
     while True:
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_PROMPT.format(type = 'starting'), constants.HIGH_PRIORITY))
-        print('Enter starting details: (building) (level) (node ID)')
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_PROMPT.format(type = 'ending'), constants.HIGH_PRIORITY))
+        print('Enter ending details: (building) (level) (node ID)')
 
         destinationBuildingNameOrNumber = str(keypad.getKeysInput())
         voiceOutput.addToQueue(INSTRUCTION(destinationBuildingNameOrNumber, constants.HIGH_PRIORITY))
