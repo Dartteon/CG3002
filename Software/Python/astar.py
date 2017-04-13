@@ -19,8 +19,6 @@ from gpio import Keypad
 # from initialisation import get_confirmation
 import re
 
-TTS_DELAY = 3.5 # Text to speech delay in seconds
-
 # Initialising Text-to-Speech
 # engine = pyttsx.init()
 serial = SerialCommunicator()
@@ -513,10 +511,10 @@ def path_to_goal(nodeList, route, northAt):
                 print(data['distance'], ' steps')
                 msg = str(data['distance']) + ' steps'
 
-            if time.time() - instructionTimeStamp > TTS_DELAY:
+            if time.time() - instructionTimeStamp > constants.TTS_DELAY:
                 instructionTimeStamp = time.time()
                 audio = True
-            if time.time() - distanceTimeStamp > 2 * TTS_DELAY:
+            if time.time() - distanceTimeStamp > 2 * constants.TTS_DELAY:
                 if not step:
                     if not audio:
                         distanceTimeStamp = time.time()
