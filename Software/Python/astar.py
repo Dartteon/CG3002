@@ -376,7 +376,7 @@ def get_map_list(prevNode, buildingStart, floorStart, buildingEnd, floorEnd, map
                 connector = re.findall(r'\d+', node['nodeName'][2:])
                 connectingMap = connector[0] + '-' + connector[1]
                 connectingNodeID = connector[2]
-                if prevNode != connectingNodeID:
+                if '{building}-{floor}'.format(building = buildingStart, floor = floorStart) not in mapList:
                     newNode = True
                     mapList.append('{building}-{floor}'.format(building = buildingStart, floor = floorStart))
                     # print buildingStart+'-'+floorStart
