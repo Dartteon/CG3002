@@ -13,6 +13,7 @@ INPUT_PROMPT = 'Please enter {type} details.'
 # GUIDING MESSAGES
 ####################
 REACHED_NEXT_NODE = 'You have reached node {id}'
+STARTING_AT_NODE = 'You are starting at node {id}'
 DESTINATION_REACHED = 'You have reached your destination.'
 
 ####################

@@ -18,12 +18,13 @@ LOWEST_PRIORITY = 3
 USELESS = 9999
 
 class PRIORITIES:
-    numberOf = 6
+    numberOf = 4
     (
     # HIGHEST PRIORITY
-    INIT,
-    DESTINATION,
-    NODE,
+    INFO,
+    # INIT,
+    # DESTINATION,
+    # NODE,
     STEP_HIGH,
     TURN,
     STEP_LOW,
