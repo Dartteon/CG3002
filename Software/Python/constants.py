@@ -5,7 +5,7 @@ SPEECH_DELAY = 0.5
 STRIDE_LENGTH = 60.0 # Stride length in cm
 TURN_INSTRUCTION_DELAY = 2.0
 WALK_INSTRUCTION_DELAY = 4.0
-ANGLE_OFFSET = 15 # Direct offset to every angle reading
+ANGLE_OFFSET = 0 # Direct offset to every angle reading
 ANGLE_TOLERANCE = 15
 
 ####################
