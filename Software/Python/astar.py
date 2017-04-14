@@ -195,8 +195,8 @@ def main():
             if len(mapList) == 1:
                 currMap = mapList.pop(0)
                 voiceOutput.addToQueue(INSTRUCTION('getting map', constants.PRIORITIES.INFO))
-                print 'Now at map ' + currMap
-                voiceOutput.addToQueue(INSTRUCTION('Now at map {map}'.format(map = currMap), constants.PRIORITIES.INFO))
+                print 'Now at map {building} {level}'.format(building = currMap.split('-')[0], level = currMap.split('-')[1])
+                voiceOutput.addToQueue(INSTRUCTION('Now at map {building} {level}'.format(building = currMap.split('-')[0], level = currMap.split('-')[1]), constants.PRIORITIES.INFO))
                 jsonmap = get_json(currMap.split('-')[0], currMap.split('-')[1])
                 info = jsonmap['info']
                 northAt = int(info['northAt'])
@@ -245,8 +245,8 @@ def main():
             else:
                 currMap = mapList.pop(0)
                 voiceOutput.addToQueue(INSTRUCTION('getting map', constants.PRIORITIES.INFO))
-                print 'Now at map ' + currMap
-                voiceOutput.addToQueue(INSTRUCTION('Now at map {map}'.format(map = currMap), constants.PRIORITIES.INFO))
+                print 'Now at map {building} {level}'.format(building = currMap.split('-')[0], level = currMap.split('-')[1])
+                voiceOutput.addToQueue(INSTRUCTION('Now at map {building} {level}'.format(building = currMap.split('-')[0], level = currMap.split('-')[1]), constants.PRIORITIES.INFO))
                 jsonmap = get_json(currMap.split('-')[0], currMap.split('-')[1])
                 info = jsonmap['info']
                 print info
