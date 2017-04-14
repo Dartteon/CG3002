@@ -194,6 +194,7 @@ def main():
             print 'Remaining maps: ' + str(mapList)
             if len(mapList) == 1:
                 currMap = mapList.pop(0)
+                voiceOutput.addToQueue(INSTRUCTION('getting map', constants.PRIORITIES.INFO))
                 print 'Now at map ' + currMap
                 voiceOutput.addToQueue(INSTRUCTION('Now at map {map}'.format(map = currMap), constants.PRIORITIES.INFO))
                 jsonmap = get_json(currMap.split('-')[0], currMap.split('-')[1])
