@@ -399,7 +399,7 @@ def get_map_list(prevNode, buildingStart, floorStart, buildingEnd, floorEnd, map
 def get_json(buildingName, floorNumber):
     '''Returns map data from building name and floor number'''
     try:
-        voiceOutput.addToQueue(INSTRUCTION('trying cache', constants.PRIORITIES.INFO))
+        # voiceOutput.addToQueue(INSTRUCTION('trying cache', constants.PRIORITIES.INFO))
         if constants.IS_DEBUG_MODE:
             fileName = ''
         else:
@@ -413,7 +413,7 @@ def get_json(buildingName, floorNumber):
         voiceOutput.addToQueue(INSTRUCTION('cache failed', constants.PRIORITIES.INFO))
         print e
         try:
-            voiceOutput.addToQueue(INSTRUCTION('trying wifi', constants.PRIORITIES.INFO))
+            # voiceOutput.addToQueue(INSTRUCTION('trying wifi', constants.PRIORITIES.INFO))
             info = None
             url = constants.BASE_URL.format(building = buildingName, level = floorNumber)
             response = urlopen(url)
