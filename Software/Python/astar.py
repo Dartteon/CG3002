@@ -42,19 +42,19 @@ def main():
     # Get start details
     buildingMode = 1
     while True:
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_PROMPT.format(type = 'starting'), constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_PROMPT.format(type = 'starting'), constants.PRIORITIES.INIT))
         print('Enter starting details: (building) (level) (node ID)')
 
         buildingNameOrNumber = str(keypad.getKeysInput())
-        voiceOutput.addToQueue(INSTRUCTION(buildingNameOrNumber, constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION(buildingNameOrNumber, constants.PRIORITIES.INIT))
         time.sleep(1)
 
         floorNumber = str(keypad.getKeysInput())
-        voiceOutput.addToQueue(INSTRUCTION(floorNumber, constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION(floorNumber, constants.PRIORITIES.INIT))
         time.sleep(1)
 
         startNodeRaw = int(keypad.getKeysInput())
-        voiceOutput.addToQueue(INSTRUCTION(str(startNodeRaw), constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION(str(startNodeRaw), constants.PRIORITIES.INIT))
         time.sleep(1)
 
         # # Get building
@@ -85,19 +85,19 @@ def main():
 
     # Get end details
     while True:
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_PROMPT.format(type = 'ending'), constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_PROMPT.format(type = 'ending'), constants.PRIORITIES.INIT))
         print('Enter ending details: (building) (level) (node ID)')
 
         destinationBuildingNameOrNumber = str(keypad.getKeysInput())
-        voiceOutput.addToQueue(INSTRUCTION(destinationBuildingNameOrNumber, constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION(destinationBuildingNameOrNumber, constants.PRIORITIES.INIT))
         time.sleep(1)
 
         destinationFloorNumber = str(keypad.getKeysInput())
-        voiceOutput.addToQueue(INSTRUCTION(destinationFloorNumber, constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION(destinationFloorNumber, constants.PRIORITIES.INIT))
         time.sleep(1)
 
         goalNodeRaw = int(keypad.getKeysInput())
-        voiceOutput.addToQueue(INSTRUCTION(str(goalNodeRaw), constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION(str(goalNodeRaw), constants.PRIORITIES.INIT))
         time.sleep(1)
 
         # # Get building
@@ -138,7 +138,7 @@ def main():
         serial.handshakeWithArduino()
 
     if buildingMode == 1:
-        voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION('getting map', constants.PRIORITIES.INIT))
         jsonmap = get_json(buildingNameOrNumber, floorNumber)
         info = jsonmap['info']
         northAt = int(info['northAt'])
@@ -242,7 +242,7 @@ def main():
 
             else:
                 currMap = mapList.pop(0)
-                voiceOutput.addToQueue(INSTRUCTION('getting map', constants.HIGH_PRIORITY))
+                voiceOutput.addToQueue(INSTRUCTION('getting map', constants.PRIORITIES.INIT))
                 print 'Now at map ' + currMap
                 jsonmap = get_json(currMap.split('-')[0], currMap.split('-')[1])
                 info = jsonmap['info']
@@ -296,7 +296,7 @@ def main():
                 path_to_goal(nodeList, route, northAt)
                 startNodeRaw = nextStartNodeRaw
 
-    voiceOutput.addToQueue(INSTRUCTION(messages.DESTINATION_REACHED, constants.HIGH_PRIORITY))
+    voiceOutput.addToQueue(INSTRUCTION(messages.DESTINATION_REACHED, constants.PRIORITIES.DESTINATION))
 
 class NODE:
     '''Used instead of map data for ease of use'''
@@ -349,16 +349,16 @@ class NODE:
 
 def get_confirmation(buildingNameOrNumber, floorNumber, nodeRaw):
     while True:
-        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_CONFIRMATION.format(building = buildingNameOrNumber, floor = floorNumber, node = nodeRaw), constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_CONFIRMATION.format(building = buildingNameOrNumber, floor = floorNumber, node = nodeRaw), constants.PRIORITIES.INIT))
         print('1 to confirm, 2 to try again: ')
         confirmation = str(keypad.getKeysInput())
-        voiceOutput.addToQueue(INSTRUCTION(confirmation, constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION(confirmation, constants.PRIORITIES.INIT))
         time.sleep(1)
         if confirmation == '1' or confirmation == '2':
             return confirmation
             # pass
         else:
-            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_OUT_OF_RANGE, constants.HIGH_PRIORITY))
+            voiceOutput.addToQueue(INSTRUCTION(messages.INPUT_OUT_OF_RANGE, constants.PRIORITIES.INIT))
 
 def get_map_list(prevNode, buildingStart, floorStart, buildingEnd, floorEnd, mapList):
     # If same building and level
@@ -396,7 +396,7 @@ def get_map_list(prevNode, buildingStart, floorStart, buildingEnd, floorEnd, map
 def get_json(buildingName, floorNumber):
     '''Returns map data from building name and floor number'''
     try:
-        voiceOutput.addToQueue(INSTRUCTION('trying cache', constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION('trying cache', constants.PRIORITIES.INIT))
         if constants.IS_DEBUG_MODE:
             fileName = ''
         else:
@@ -407,10 +407,10 @@ def get_json(buildingName, floorNumber):
             # debug_print(data)
         return data
     except Exception as e:
-        voiceOutput.addToQueue(INSTRUCTION('cache failed', constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION('cache failed', constants.PRIORITIES.INIT))
         print e
         try:
-            voiceOutput.addToQueue(INSTRUCTION('trying wifi', constants.HIGH_PRIORITY))
+            voiceOutput.addToQueue(INSTRUCTION('trying wifi', constants.PRIORITIES.INIT))
             info = None
             url = constants.BASE_URL.format(building = buildingName, level = floorNumber)
             response = urlopen(url)
@@ -424,7 +424,7 @@ def get_json(buildingName, floorNumber):
                     debug_print(data)
                 return data
         except Exception as e:
-            voiceOutput.addToQueue(INSTRUCTION('wifi failed', constants.HIGH_PRIORITY))
+            voiceOutput.addToQueue(INSTRUCTION('wifi failed', constants.PRIORITIES.INIT))
             print e
 
 def heuristic(goalNode, nodeList):
@@ -503,7 +503,7 @@ def path_to_goal(nodeList, route, northAt):
                 msg = str(data['distance']) + ' steps'
                 prevStepsTaken = data['distance']
                 instruction = 'Walk ' + str(stepsToNode)
-                voiceOutput.addToQueue(INSTRUCTION(instruction, constants.MED_PRIORITY))
+                voiceOutput.addToQueue(INSTRUCTION(instruction, constants.PRIORITIES.STEP_HIGH))
 
                 print(data['distance'], ' steps')
                 prevTotalDistance = data['distance']
@@ -524,20 +524,20 @@ def path_to_goal(nodeList, route, northAt):
                 instruction = 'Turn ' + str(turnAngle)
                 print instruction
                 if time.time() - instructionTimeStamp > constants.TURN_INSTRUCTION_DELAY:
-                    voiceOutput.addToQueue(INSTRUCTION(instruction, constants.LOW_PRIORITY))
+                    voiceOutput.addToQueue(INSTRUCTION(instruction, constants.PRIORITIES.TURN))
                     instructionTimeStamp = time.time()
             else:
                 instruction = 'Walk ' + str(stepsToNode)
                 print str(distanceToNode)
                 print instruction
                 if time.time() - distanceTimeStamp > constants.WALK_INSTRUCTION_DELAY:
-                    voiceOutput.addToQueue(INSTRUCTION(instruction, constants.LOWEST_PRIORITY))
+                    voiceOutput.addToQueue(INSTRUCTION(instruction, constants.PRIORITIES.STEP_LOW))
                     distanceTimeStamp = time.time()
 
         reached_message = messages.REACHED_NEXT_NODE.format(id = str(nextNode.nodeId))
         totalNodeDistance += nodeToNode['distance']
         print reached_message
-        voiceOutput.addToQueue(INSTRUCTION(reached_message, constants.HIGH_PRIORITY))
+        voiceOutput.addToQueue(INSTRUCTION(reached_message, constants.PRIORITIES.NODE))
         previousNode = nextNode
         isNextNodeReached = False
 

@@ -1,8 +1,6 @@
-#voiceThread.py
 import threading
 import time
 import subprocess
-# import signal
 import os
 import constants
 from Queue import Queue
@@ -28,97 +26,50 @@ class INSTRUCTION:
 class VoiceHandler:
     def __init__(self):
         self.voiceLock = threading.Lock()
-        self.voiceQueue = Queue()
-        self.voiceStepQueue = Queue()
+        self.voiceQueueList = []
+        for priority in xrange(constants.PRIORITIES.numberOf):
+            self.voiceQueueList.append(Queue())
         self.lastProcess = None
-        self.previousInstruction = INSTRUCTION('', constants.USELESS)
 
-    #########################
+    #################
     # Main voice loop
-    #########################
-    # def voiceLoop(self):
-    #     while True:
-    #         self.voiceLock.acquire()
-    #         if self.voiceQueue.empty():
-    #             pass
-    #         elif self.lastProcess is None:
-    #             message = self.voiceQueue.get().message
-    #             self.sayMessage(message)
-    #         elif self.lastProcess is not None and self.isProcessDone():
-    #             message = self.voiceQueue.get().message
-    #             self.sayMessage(message)
-    #         self.voiceLock.release()
-    #         time.sleep(constants.SPEECH_DELAY)
-
+    #################
     def voiceLoop(self):
         while True:
             self.voiceLock.acquire()
-            # If step queue is empty
-            if self.voiceStepQueue.empty():
-                # If standard queue is empty
-                if self.voiceQueue.empty():
-                    pass
-                elif self.lastProcess is None:
-                    message = self.voiceQueue.get().message
-                    self.sayMessage(message)
-                elif self.lastProcess is not None and self.isProcessDone():
-                    message = self.voiceQueue.get().message
-                    self.sayMessage(message)
-            elif self.lastProcess is None:
-                stepMessage = self.voiceStepQueue.get().message
-                self.sayMessage(stepMessage)
-            elif self.lastProcess is not None and self.isProcessDone():
-                stepMessage = self.voiceStepQueue.get().message
-                self.sayMessage(stepMessage)
+
+            # Iterate through voice queues in order of priorities
+            for voiceQueue in self.voiceQueueList:
+                # If voice queue is not empty
+                if not voiceQueue.empty():
+                    # If no message is being spoken
+                    if (self.lastProcess is None) or (self.lastProcess is not None and self.isProcessDone()):
+                        # Get message from voice queue and speak
+                        message = voiceQueue.get().message
+                        self.sayMessage(message)
+                    # Stop iterating through lower-priority voice queues
+                    break;
+
             self.voiceLock.release()
             time.sleep(constants.SPEECH_DELAY)
 
-    #########################
+    ##################
     # Helper functions
-    #########################
-    # def addToQueue(self, instruction):
-    #     self.voiceLock.acquire()
-    #     if self.voiceQueue.empty():
-    #         print 'queue empty.'
-    #         self.voiceQueue.put(instruction)
-    #         self.previousInstruction = instruction
-    #     else:
-    #         self.voiceQueue.queue.clear()
-    #         self.voiceQueue.put(instruction)
-    #         self.previousInstruction = instruction
-    #     # elif self.previousInstruction.priority == instruction.priority and self.previousInstruction.message != instruction.message:
-    #     #     self.voiceQueue.queue.clear()
-    #     #     self.voiceQueue.put(instruction)
-    #     #     self.previousInstruction = instruction
-    #     # elif self.previousInstruction.priority > instruction.priority and self.previousInstruction.message != instruction.message:
-    #     #     self.voiceQueue.queue.clear()
-    #     #     self.voiceQueue.put(instruction)
-    #     #     self.previousInstruction = instruction
-    #     self.voiceLock.release()
-
+    ##################
     def addToQueue(self, instruction):
         self.voiceLock.acquire()
-        if instruction.priority == constants.MED_PRIORITY:
-            if self.voiceStepQueue.empty():
-                self.voiceQueue.queue.clear()
-                self.voiceStepQueue.put(instruction)
-                self.previousInstruction = instruction
-            else:
-                self.voiceQueue.queue.clear()
-                self.voiceStepQueue.queue.clear()
-                self.voiceStepQueue.put(instruction)
-                self.previousInstruction = instruction
-        else:
-            if self.voiceQueue.empty():
-                self.voiceQueue.put(instruction)
-                self.previousInstruction = instruction
-            # elif self.previousInstruction.priority == instruction.priority and self.previousInstruction.message != instruction.message:
-            #     self.voiceQueue.put(instruction)
-            #     self.previousInstruction = instruction
-            elif self.previousInstruction.priority >= instruction.priority and self.previousInstruction.message != instruction.message:
-                self.voiceQueue.queue.clear()
-                self.voiceQueue.put(instruction)
-                self.previousInstruction = instruction
+        # Select appropriate voice queue
+        voiceQueue = self.voiceQueueList[instruction.priority]
+
+        # Clear voice queue only for instructions that need to be up-to-date
+        if instruction.priority in (
+            constants.PRIORITIES.STEP_HIGH,
+            constants.PRIORITIES.TURN,
+            constants.PRIORITIES.STEP_LOW,
+            ):
+            voiceQueue.queue.clear()
+        # Put instruction in appropriate queue regardless of priority
+        voiceQueue.put(instruction)
         self.voiceLock.release()
 
     def sayMessage(self, message):
