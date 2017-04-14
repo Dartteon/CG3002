@@ -510,7 +510,8 @@ def path_to_goal(nodeList, route, northAt):
                 msg = str(data['distance']) + ' steps'
                 prevStepsTaken = data['distance']
                 instruction = 'Walk ' + str(stepsToNode)
-                voiceOutput.addToQueue(INSTRUCTION(instruction, constants.PRIORITIES.STEP_HIGH))
+                if stepsToNode > 0.0:
+                    voiceOutput.addToQueue(INSTRUCTION(instruction, constants.PRIORITIES.STEP_HIGH))
 
                 print(data['distance'], ' steps')
                 prevTotalDistance = data['distance']
@@ -530,16 +531,17 @@ def path_to_goal(nodeList, route, northAt):
             if abs(turnAngle) > constants.ANGLE_TOLERANCE:
                 instruction = 'Turn ' + str(turnAngle)
                 print instruction
-                if time.time() - instructionTimeStamp > constants.TURN_INSTRUCTION_DELAY:
-                    voiceOutput.addToQueue(INSTRUCTION(instruction, constants.PRIORITIES.TURN))
-                    instructionTimeStamp = time.time()
+                # if time.time() - instructionTimeStamp > constants.TURN_INSTRUCTION_DELAY:
+                voiceOutput.addToQueue(INSTRUCTION(instruction, constants.PRIORITIES.TURN))
+                    # instructionTimeStamp = time.time()
             else:
                 instruction = 'Walk ' + str(stepsToNode)
                 print str(distanceToNode)
                 print instruction
-                if time.time() - distanceTimeStamp > constants.WALK_INSTRUCTION_DELAY:
+                # if time.time() - distanceTimeStamp > constants.WALK_INSTRUCTION_DELAY:
+                if stepsToNode > 0.0:
                     voiceOutput.addToQueue(INSTRUCTION(instruction, constants.PRIORITIES.STEP_LOW))
-                    distanceTimeStamp = time.time()
+                    # distanceTimeStamp = time.time()
 
         reached_message = messages.REACHED_NEXT_NODE.format(id = str(nextNode.nodeId))
         totalNodeDistance += nodeToNode['distance']
