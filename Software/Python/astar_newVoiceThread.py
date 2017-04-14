@@ -191,7 +191,7 @@ def main():
 
         #Loop
         while mapList:
-            print 'Remaining maps: ' + mapList
+            # print 'Remaining maps: ' + mapList
             if len(mapList) == 1:
                 currMap = mapList.pop(0)
                 voiceOutput.addToQueue(INSTRUCTION('getting map', constants.PRIORITIES.INIT))
