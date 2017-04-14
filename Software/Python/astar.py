@@ -471,6 +471,11 @@ def path_to_goal(nodeList, route, northAt):
     previousNode = nodeList[route[index]-1]
     goalNode = nodeList[route[len(route)-1]-1]
     position = {'x':nodeList[route[index]-1].x, 'y':nodeList[route[index]-1].y, 'heading':0}
+
+    starting_message = messages.STARTING_AT_NODE.format(id = str(previousNode.nodeId))
+    print starting_message
+    voiceOutput.addToQueue(INSTRUCTION(starting_message, constants.PRIORITIES.NODE))
+
     while previousNode != goalNode:
         isNextNodeReached = False
         index += 1
