@@ -89,7 +89,7 @@ volatile int lastKnownDirection;
 
 int NUM_SAMPLE_COUNTS_TO_RECALCULATE_THRESHOLD = 50;
 int MINIMUM_ACCELERATION_MAGNITUDE = 5000;
-int MINIMUM_STEP_INTERVAL_MILLISECONDS = 800;
+int MINIMUM_STEP_INTERVAL_MILLISECONDS = 500;
 int MINIMUM_ACCELERATION_DELTA = 200; //Crossing below threshold not enough - it must be a decent acceleration change
 int DIST_PER_STEP_CM = 60;
 int PREDIFINED_PRECISION = 250; //minimum delta to shift new value into xSampleNew (xSampleNew)
@@ -127,7 +127,7 @@ void echoCheck() { // If ping echo, set distance to array.
 void oneSensorCycle() { // Do something with the results.
   for (uint8_t i = 0; i < SONAR_NUM; i++) {
     unsigned int currDist = cm[i];
-    int maxDist = (i == 0 || i == 1) ? MAX_DISTANCE_ARM_L : MAX_DISTANCE_MID;
+    int maxDist = (i == 0 || i == 2) ? MAX_DISTANCE_ARM_L : MAX_DISTANCE_MID;
     digitalWrite(motorPins[i], (currDist > MIN_DISTANCE && currDist <= maxDist));
     Serial.print(cm[i]);
     Serial.print(" ");
